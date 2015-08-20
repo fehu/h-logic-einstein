@@ -10,6 +10,8 @@ module Problem.Exec (
 
 ) where
 
+import qualified Data.Map as M (Map, fromList)
+
 import Problem.Statement
 
 
@@ -45,4 +47,11 @@ getResultEntries (SBroken es)        = es
 getResultEntries (SConfirm es)       = es
 getResultEntries (SEmpty es)         = es
 getResultEntries (SPossible es)      = es
+
+
+newtype ETable e = ETable (M.Map Id e)
+
+newETable :: (a -> (Id, e)) -> [a] -> ETable e
+newETable f as = ETable $ M.fromList (map f as)
+
 

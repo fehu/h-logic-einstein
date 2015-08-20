@@ -38,6 +38,9 @@ data AnEntry = AnEntry ID
                        (Maybe Bebida)
                        (Maybe Musica)
 
+instance IdRepr ID where getRepr = show
+                         getOrd  = fromEnum
+
 instance Entry   AnEntry where get _ = id
 instance EntryId AnEntry where getId (AnEntry i _ _ _ _ _) = Id i
 

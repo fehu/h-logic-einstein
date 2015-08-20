@@ -4,6 +4,8 @@ module Problem(
 , AccessibleDescriptor(..)
 
 , Id(..)
+, IdRepr(..)
+
 , Entry(..)
 , EntryGet(..)
 , EntryId(..)

@@ -116,4 +116,4 @@ dsl2CCond1 (DSLCondition1 f) = cCond1 (varDescriptor (undefined::v)) f
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 
---dslToInternal facts =
+
