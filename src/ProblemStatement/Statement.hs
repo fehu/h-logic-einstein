@@ -1,14 +1,19 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE MultiParamTypeClasses
+           , ExistentialQuantification
+         #-}
 
 module ProblemStatement.Statement (
 
   Accessible(..)
+, Value(..)
 , AccessibleDescriptor(..)
 
 --, Value(..)
 
+, Id(..)
 , Entry(..)
 , EntryGet(..)
+, EntryId(..)
 
 , Statement(..)
 , Known(..)
@@ -29,19 +34,23 @@ class (Show v, Eq v) => Accessible v where
 --instance (Show i, Eq i) => Accessible (Id  i) where modifiable _ = False
 
 
---class (Accessible v, Show a, Eq a) => Value x v a where
---    val   :: v -> a -> x
---    varOf :: x -> v
---    valOf :: x -> a
+data Value = forall v. (Accessible v) => Value v
 
 newtype AccessibleDescriptor v = AccessibleDescriptor String
 
 class Entry e where
-    get :: (Accessible v, EntryGet e v) => AccessibleDescriptor v -> e -> e
+    get   :: (Accessible v, EntryGet e v) => AccessibleDescriptor v -> e -> e
 
 class (Entry e) => EntryGet e v where
     getV :: (Accessible v) => AccessibleDescriptor v -> e -> Maybe v -- AccessibleDescriptor v ->
 
+
+
+data Id = forall i. (Show i, Eq i, Ord i) => Id i
+--        deriving (Show, Eq, Ord)
+
+class (Entry e) => EntryId e where -- , Accessible id, EntryGet e id
+    getId :: e -> Id
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 

@@ -17,8 +17,9 @@ cabal-version:       >=1.10
 library
   exposed-modules:     Problem
                        ProblemStatement
-                        ProblemStatement.DSL
                         ProblemStatement.Statement
+                        ProblemStatement.Exec
+                        ProblemStatement.DSL
                         ProblemStatement.Example1
                        Example1
   other-modules:       ProblemOrig

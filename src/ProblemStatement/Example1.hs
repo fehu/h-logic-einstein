@@ -4,8 +4,10 @@
 
 
 module ProblemStatement.Example1 (
-
+  main
 ) where
+
+import Data.List (intercalate)
 
 import ProblemStatement
 
@@ -30,22 +32,22 @@ data Musica = Piano | Bateria | Guitarra | Teclado | Violin
     deriving (Eq, Show)
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
-data AnEntry = AnEntry (Maybe ID)
+data AnEntry = AnEntry ID
                        (Maybe Color)
                        (Maybe Nacion)
                        (Maybe Animal)
                        (Maybe Bebida)
                        (Maybe Musica)
 
-instance Entry AnEntry where
+instance Entry   AnEntry where get _ = id
+instance EntryId AnEntry where getId (AnEntry i _ _ _ _ _) = Id i
 
-
-instance EntryGet AnEntry ID
-instance EntryGet AnEntry Color
-instance EntryGet AnEntry Nacion
-instance EntryGet AnEntry Animal
-instance EntryGet AnEntry Bebida
-instance EntryGet AnEntry Musica
+instance EntryGet AnEntry ID      where getV _ (AnEntry i _ _ _ _ _) = Just i
+instance EntryGet AnEntry Color   where getV _ (AnEntry _ c _ _ _ _) = c
+instance EntryGet AnEntry Nacion  where getV _ (AnEntry _ _ n _ _ _) = n
+instance EntryGet AnEntry Animal  where getV _ (AnEntry _ _ _ a _ _) = a
+instance EntryGet AnEntry Bebida  where getV _ (AnEntry _ _ _ _ b _) = b
+instance EntryGet AnEntry Musica  where getV _ (AnEntry _ _ _ _ _ m) = m
 
 --    get (AccessibleDescriptor "ID") = undefined
 --    get vd (AnEntry id color nacion animal bebida musica) =
@@ -69,34 +71,12 @@ instance Accessible Musica where modifiable _    = True
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 facts :: KnownFacts AnEntry
-facts = [ "№2" -:  Ingles <==> Roja                  |:: "El inglés vive en la casa roja."
-        , "№3" -: Espanol <==> Perro                 |:: "El español es el proprietario del perro."
-        , "№6" -:   Verde <==> Marfil |?> aDerechaDe |:: "La casa verde está junto y a la derecha de la casa de marfil."
+facts = [ "№2"  -:   Ingles <==> Roja                  |:: "El inglés vive en la casa roja."
+        , "№3"  -:  Espanol <==> Perro                 |:: "El español es el proprietario del perro."
+        , "№6"  -:    Verde <==> Marfil |?> aDerechaDe |:: "La casa verde está junto y a la derecha de la casa de marfil."
+        , "№9"  -:        C <==> Leche
+        , "№11" -: Guitarra <==> Zorro  |?> enseguida
         ]
-
---hechos = [ Ingles <--> Roja          --  2
---         , Espanol <--> Perro        --  3
---         , Verde <--> Cafe           --  4
---         , Ruso <--> Te              --  5
---         , cond6                     --  6
---         , Piano <--> Caracoles      --  7
---         , Amarilla <--> Bateria     --  8
---         , C <--> Leche              --  9
---         , A <--> Noruego            -- 10
---         , enseguida Guitarra Zorro  -- 11
---         , enseguida Caballo Bateria -- 12
---         , Violin <--> Naranjada     -- 13
---         , Japones <--> Teclado      -- 14
---         , enseguida Noruego Azul    -- 15
---         , constr16                  -- 16
---         , enseguida Perro Leche     -- 17
---         ]
-st_2  = Ingles   <==> Roja
-st_3  = Espanol  <==> Perro
-st_6  = Verde    <==> Marfil |?> aDerechaDe
-st_9  = C        <==> Leche
-st_11 = Guitarra <==> Zorro  |?> enseguida
-
 
 type CondFunc1 v = Maybe v -> Maybe v -> Bool
 
@@ -109,5 +89,25 @@ Just x `aDerechaDe` Just y = succ y == x
 aIzquierdaDe = flip aDerechaDe
 
 
+--         , Verde <--> Cafe           --  4
+--         , Ruso <--> Te              --  5
 
+--         , Piano <--> Caracoles      --  7
+--         , Amarilla <--> Bateria     --  8
+
+--         , A <--> Noruego            -- 10
+
+--         , enseguida Caballo Bateria -- 12
+--         , Violin <--> Naranjada     -- 13
+--         , Japones <--> Teclado      -- 14
+--         , enseguida Noruego Azul    -- 15
+--         , constr16                  -- 16
+--         , enseguida Perro Leche     -- 17
+--         ]
+
+
+
+
+main :: IO()
+main = putStrLn $ intercalate "\n" (map show facts)
 

@@ -3,8 +3,10 @@ module ProblemStatement (
   Accessible(..)
 , AccessibleDescriptor(..)
 
+, Id(..)
 , Entry(..)
 , EntryGet(..)
+, EntryId(..)
 
 , KnownFacts
 
