@@ -1,5 +1,5 @@
 {-# LANGUAGE MultiParamTypeClasses
-           , FlexibleInstances
+--           , FlexibleInstances
          #-}
 
 
@@ -10,6 +10,7 @@ module Example1 (
 import Data.List (intercalate)
 
 import Problem
+import Problem.DSL.Internal
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 

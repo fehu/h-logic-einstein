@@ -19,6 +19,8 @@ library
                         Problem.Statement
                         Problem.Exec
                         Problem.DSL
+                         Problem.DSL.Struct
+                         Problem.DSL.Internal
                        Example1
   -- other-modules:
   -- other-extensions:
