@@ -6,7 +6,7 @@
 --           , ScopedTypeVariables
          #-}
 
-module ProblemStatement.DSL (
+module Problem.DSL (
 
 --  DSLStatement(..)
 --, DSLKnown(..)
@@ -21,8 +21,8 @@ module ProblemStatement.DSL (
 
 ) where
 
-import ProblemStatement.Statement
-import ProblemStatement.Exec
+import Problem.Statement
+import Problem.Exec
 
 
 data DSLStatement v = DSLAtomic v

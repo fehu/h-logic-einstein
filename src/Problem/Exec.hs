@@ -1,11 +1,11 @@
 
-module ProblemStatement.Exec (
+module Problem.Exec (
 
   SApplyResult(..)
 
 ) where
 
-import ProblemStatement.Statement
+import Problem.Statement
 
 
 type SEntry v = (Id, [v])

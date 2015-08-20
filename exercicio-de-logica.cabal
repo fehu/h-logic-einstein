@@ -16,13 +16,11 @@ cabal-version:       >=1.10
 
 library
   exposed-modules:     Problem
-                       ProblemStatement
-                        ProblemStatement.Statement
-                        ProblemStatement.Exec
-                        ProblemStatement.DSL
-                        ProblemStatement.Example1
+                        Problem.Statement
+                        Problem.Exec
+                        Problem.DSL
                        Example1
-  other-modules:       ProblemOrig
+  -- other-modules:
   -- other-extensions:
   build-depends:       base >=4.7 && <4.8,
                        containers -any

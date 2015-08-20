@@ -2,7 +2,7 @@
            , ExistentialQuantification
          #-}
 
-module ProblemStatement.Statement (
+module Problem.Statement (
 
   Accessible(..)
 , Value(..)

@@ -1,129 +1,113 @@
 {-# LANGUAGE MultiParamTypeClasses
-            , TypeSynonymInstances
-            , FlexibleInstances
-            , FlexibleContexts
---            , ExistentialQuantification
---            , ImplicitParams
-          #-}
+           , FlexibleInstances
+         #-}
+
 
 module Example1 (
   main
 ) where
 
-import Problem
-
 import Data.List (intercalate)
+
+import Problem
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 data ID = A | B | C | D | E
-        deriving (Eq, Enum, Show, Read)
+    deriving (Show, Eq, Ord, Enum, Bounded)
 
-data Color = Roja | Verde | Azul | Marfil | Amarilla
-           deriving (Eq, Show)
+data Color  = Roja | Verde | Azul | Marfil | Amarilla
+    deriving (Eq, Show)
 
-data Nacionalidad = Ingles | Espanol | Ruso | Noruego | Japones
-                  deriving (Eq, Show)
+data Nacion = Ingles | Espanol | Ruso | Noruego | Japones
+    deriving (Eq, Show)
 
 data Animal = Perro | Caracoles | Zorro | Caballo | Cebra
-            deriving (Eq, Show)
+    deriving (Eq, Show)
 
 data Bebida = Cafe | Te | Leche | Naranjada | Agua
-            deriving (Eq, Show)
+    deriving (Eq, Show)
 
-data Instrumento = Piano | Bateria | Guitarra | Teclado | Violin
-                 deriving (Eq, Show)
+data Musica = Piano | Bateria | Guitarra | Teclado | Violin
+    deriving (Eq, Show)
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+
+data AnEntry = AnEntry ID
+                       (Maybe Color)
+                       (Maybe Nacion)
+                       (Maybe Animal)
+                       (Maybe Bebida)
+                       (Maybe Musica)
+
+instance Entry   AnEntry where get _ = id
+instance EntryId AnEntry where getId (AnEntry i _ _ _ _ _) = Id i
+
+instance EntryGet AnEntry ID      where getV _ (AnEntry i _ _ _ _ _) = Just i
+instance EntryGet AnEntry Color   where getV _ (AnEntry _ c _ _ _ _) = c
+instance EntryGet AnEntry Nacion  where getV _ (AnEntry _ _ n _ _ _) = n
+instance EntryGet AnEntry Animal  where getV _ (AnEntry _ _ _ a _ _) = a
+instance EntryGet AnEntry Bebida  where getV _ (AnEntry _ _ _ _ b _) = b
+instance EntryGet AnEntry Musica  where getV _ (AnEntry _ _ _ _ _ m) = m
+
+--    get (AccessibleDescriptor "ID") = undefined
+--    get vd (AnEntry id color nacion animal bebida musica) =
+--        case vd of ((AccessibleDescriptor "ID") :: AccessibleDescriptor ID) -> id
+
+
+instance Accessible ID     where modifiable _    = False
+                                 varDescriptor _ = AccessibleDescriptor "ID"
+instance Accessible Color  where modifiable _    = True
+                                 varDescriptor _ = AccessibleDescriptor "Color"
+instance Accessible Nacion where modifiable _    = True
+                                 varDescriptor _ = AccessibleDescriptor "Nacion"
+instance Accessible Animal where modifiable _    = True
+                                 varDescriptor _ = AccessibleDescriptor "Animal"
+instance Accessible Bebida where modifiable _    = True
+                                 varDescriptor _ = AccessibleDescriptor "Bebida"
+instance Accessible Musica where modifiable _    = True
+                                 varDescriptor _ = AccessibleDescriptor "Musica"
+
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
-class Value v var val where
-    val :: v -> (var, val)
---    valVar :: v -> var
---    valVal :: v -> val
---
---    valVar v = fst (val v)
+facts :: KnownFacts AnEntry
+facts = [ "№2"  -:   Ingles <==> Roja                  |:: "El inglés vive en la casa roja."
+        , "№3"  -:  Espanol <==> Perro                 |:: "El español es el proprietario del perro."
+        , "№6"  -:    Verde <==> Marfil |?> aDerechaDe |:: "La casa verde está junto y a la derecha de la casa de marfil."
+        , "№9"  -:        C <==> Leche
+        , "№11" -: Guitarra <==> Zorro  |?> enseguida
+        ]
 
-varID     = Var "ID"
-varColor  = Var "Color"
-varNacion = Var "Nacionalidad"
-varAnimal = Var "Animal"
-varBebida = Var "Bebida"
-varMusic  = Var "Instrumento"
+type CondFunc1 v = Maybe v -> Maybe v -> Bool
 
+enseguida :: CondFunc1 ID
+Just x `enseguida` Just y  = succ x == y || pred x == y
 
-instance Value ID Var String where
-    val a = (varID, show a)
+aDerechaDe :: CondFunc1 ID
+Just x `aDerechaDe` Just y = succ y == x
 
-instance Value Color Var String where
-    val a = (varColor, show a)
-
-instance Value Nacionalidad Var String where
-    val a = (varNacion, show a)
-
-instance Value Animal Var String where
-    val a = (varAnimal, show a)
-
-instance Value Bebida Var String where
-    val a = (varBebida, show a)
-
-instance Value Instrumento Var String where
-    val a = (varMusic, show a)
-
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-
-data Var = Var String deriving (Eq, Show)
-data Id  = Id String  deriving (Eq, Show)
-
-(<-->) :: (Value a Var String, Value b Var String) => a -> b -> Statement Var String
-a <--> b = State (val a) (val b)
-
-type Hechos = [Statement Var String]
-
---esVicino = mirror (||) f
---    where f x y = pred x == y || succ x == y
-
--- TODO:  use `mirror`
-
-esVicino x y = pred x == y || succ x == y
+aIzquierdaDe = flip aDerechaDe
 
 
-enseguida v1 v2 = Cond3 var1 var2 varID f
-               where (var1, val1) = val v1
-                     (var2, val2) = val v2
-                     f (v1, p1, _) (_, p2, v2) =
-                        let pos1 = read p1 :: ID
-                            pos2 = read p2
-                        in val1 == v1 && val2 == v2 && esVicino pos1 pos2
+--         , Verde <--> Cafe           --  4
+--         , Ruso <--> Te              --  5
 
-cond6 = Cond2 varColor varID f
-    where f ("Verde", pos1) ("Marfil", pos2) = succ marfilPos == verdePos
-                                            where marfilPos = read pos2 :: ID
-                                                  verdePos  = read pos1
+--         , Piano <--> Caracoles      --  7
+--         , Amarilla <--> Bateria     --  8
 
-constr16 = Constraint2 varNacion varID f
-        where f ("Japones", p) = let pos = read p :: ID
-                                 in pos == A || pos == E
+--         , A <--> Noruego            -- 10
 
-hechos :: Hechos
-hechos = [ Ingles <--> Roja          --  2
-         , Espanol <--> Perro        --  3
-         , Verde <--> Cafe           --  4
-         , Ruso <--> Te              --  5
-         , cond6                     --  6
-         , Piano <--> Caracoles      --  7
-         , Amarilla <--> Bateria     --  8
-         , C <--> Leche              --  9
-         , A <--> Noruego            -- 10
-         , enseguida Guitarra Zorro  -- 11
-         , enseguida Caballo Bateria -- 12
-         , Violin <--> Naranjada     -- 13
-         , Japones <--> Teclado      -- 14
-         , enseguida Noruego Azul    -- 15
-         , constr16                  -- 16
-         , enseguida Perro Leche     -- 17
-         ]
+--         , enseguida Caballo Bateria -- 12
+--         , Violin <--> Naranjada     -- 13
+--         , Japones <--> Teclado      -- 14
+--         , enseguida Noruego Azul    -- 15
+--         , constr16                  -- 16
+--         , enseguida Perro Leche     -- 17
+--         ]
 
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+
+
 
 main :: IO()
-main = putStrLn $ intercalate "\n" (map show hechos)
+main = putStrLn $ intercalate "\n" (map show facts)
+
