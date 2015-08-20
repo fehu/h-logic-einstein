@@ -48,7 +48,10 @@ data DSLCondContainer1 entry = forall v. DSLCondContainer1 (Maybe v -> Maybe v -
 instance Show (DSLCondContainer1 e) where
     show (DSLCondContainer1 _ _ (AccessibleDescriptor v)) = "Condition over v"
 
-instance DSLContainer DSLCondContainer1 e where
+instance (EntryId e) => DSLContainer DSLCondContainer1 e where
+    test e1 e2 c | testCCond1 c e1 e2 = SConfirm p
+                 | otherwise          = SBroken  p
+        where p = map (\e -> (getId e, [])) [e1, e2]
 
 testCCond1 :: DSLCondContainer1 e -> e -> e -> Bool
 testCCond1 (DSLCondContainer1 f get _) e1 e2 = f (get e1) (get e2)
@@ -61,7 +64,15 @@ data DSLKnownCondContainer1 entry = DSLKnownCondContainer1 (DSLKnownContainer en
 instance Show (DSLKnownCondContainer1 e) where
     show (DSLKnownCondContainer1 known cond) = "[" ++ show known ++ ", " ++ show cond ++ "]"
 
-instance DSLContainer DSLKnownCondContainer1 e where
+instance (EntryId e) => DSLContainer DSLKnownCondContainer1 e where
+    test e1 e2 (DSLKnownCondContainer1 kc cc) =
+        if isSuccess known then if      isSuccess      cond then known
+                                else if isUndetermined cond then poss
+                                                            else cond
+                           else known
+        where known = test e1 e2 kc
+              cond  = test e1 e2 cc
+              poss  = SPossible $ getResultEntries known
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
@@ -75,12 +86,13 @@ instance ( Accessible a, EntryGet e a
         boxExpression = DSLC . dsl2CKnown
 
 
-instance (Accessible v, EntryGet e v) => DSLExpression (DSLCondition1 v) e where
+instance (Accessible v, EntryGet e v, EntryId e) => DSLExpression (DSLCondition1 v) e where
     boxExpression = DSLC . dsl2CCond1
 
 instance ( Accessible a, EntryGet e a
          , Accessible b, EntryGet e b
-         , Accessible v, EntryGet e v) =>
+         , Accessible v, EntryGet e v
+         , EntryId e ) =>
     DSLExpression (DSLKnownCond1 a b v) e
     where
         boxExpression (DSLKnownCond1 known cond) = DSLC $ DSLKnownCondContainer1 k c
@@ -101,5 +113,7 @@ dsl2CCond1 :: (EntryGet entry v, Accessible v) => DSLCondition1 v -> DSLCondCont
 dsl2CCond1 (DSLCondition1 f) = cCond1 (varDescriptor (undefined::v)) f
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+
 
 --dslToInternal facts =

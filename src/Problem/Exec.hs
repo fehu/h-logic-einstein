@@ -3,6 +3,11 @@ module Problem.Exec (
 
   SApplyResult(..)
 
+, isSuccess
+, isFailure
+, isUndetermined
+, getResultEntries
+
 ) where
 
 import Problem.Statement
@@ -17,3 +22,27 @@ data SApplyResult v = SImplies  { what   :: [SEntry v]
                     | SConfirm  [SEntry v]
                     | SEmpty    [SEntry v]
                     | SPossible [SEntry v]
+
+
+isSuccess        :: SApplyResult v -> Bool
+isFailure        :: SApplyResult v -> Bool
+isUndetermined   :: SApplyResult v -> Bool
+getResultEntries :: SApplyResult v -> [SEntry v]
+
+isSuccess (SImplies _ _) = True
+isSuccess (SConfirm _)   = True
+isSuccess _              = False
+
+isFailure (SBroken _) = True
+isFailure _           = False
+
+isUndetermined (SEmpty _)    = True
+isUndetermined (SPossible _) = True
+isUndetermined _             = False
+
+getResultEntries SImplies {what = w} = w
+getResultEntries (SBroken es)        = es
+getResultEntries (SConfirm es)       = es
+getResultEntries (SEmpty es)         = es
+getResultEntries (SPossible es)      = es
+
