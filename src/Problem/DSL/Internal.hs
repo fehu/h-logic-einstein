@@ -14,6 +14,8 @@ import Problem.Exec
 
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+-- Containers
 
 data DSLKnownContainer entry = forall a b. ( Eq a, Accessible a, Show a
                                            , Eq b, Accessible b, Show b) =>
@@ -48,6 +50,9 @@ instance Show (DSLCondContainer1 e) where
 
 instance DSLContainer DSLCondContainer1 e where
 
+testCCond1 :: DSLCondContainer1 e -> e -> e -> Bool
+testCCond1 (DSLCondContainer1 f get _) e1 e2 = f (get e1) (get e2)
+
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 data DSLKnownCondContainer1 entry = DSLKnownCondContainer1 (DSLKnownContainer entry)
@@ -59,11 +64,8 @@ instance Show (DSLKnownCondContainer1 e) where
 instance DSLContainer DSLKnownCondContainer1 e where
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-
-testCCond1 :: DSLCondContainer1 e -> e -> e -> Bool
-testCCond1 (DSLCondContainer1 f get _) e1 e2 = f (get e1) (get e2)
-
-
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+-- instance DSLExpression
 
 instance ( Accessible a, EntryGet e a
          , Accessible b, EntryGet e b
@@ -84,7 +86,6 @@ instance ( Accessible a, EntryGet e a
         boxExpression (DSLKnownCond1 known cond) = DSLC $ DSLKnownCondContainer1 k c
                                                 where k = dsl2CKnown known
                                                       c = dsl2CCond1 cond
---(DSLKnown a b) (DSLCondition2 v1 v2)
 
 cStatement :: (EntryGet entry v, Accessible v) => DSLStatement v -> (v, entry -> Maybe v)
 cStatement (DSLAtomic v) = (v, getV $ varDescriptor v)
@@ -98,3 +99,7 @@ cCond1 vd f = DSLCondContainer1 f (getV vd) vd
 
 dsl2CCond1 :: (EntryGet entry v, Accessible v) => DSLCondition1 v -> DSLCondContainer1 entry
 dsl2CCond1 (DSLCondition1 f) = cCond1 (varDescriptor (undefined::v)) f
+
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+
+--dslToInternal facts =

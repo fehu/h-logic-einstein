@@ -10,11 +10,7 @@ module Problem.DSL (
 
 ) where
 
---import Problem.Statement
---import Problem.Exec
-
 import Problem.DSL.Struct
-
 
 x <==> y = DSLKnown (DSLAtomic x) (DSLAtomic y)
 k |?> f  = DSLKnownCond1 k (DSLCondition1 f)
@@ -33,9 +29,5 @@ rule |:: descr = rule { ruleDescription = Just descr }
 
 infix 3 -:
 infix 2 |::
-
---dslToInternal facts =
-
-
 
 

@@ -1,7 +1,4 @@
-{-# LANGUAGE MultiParamTypeClasses
---           , FlexibleInstances
-         #-}
-
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Example1 (
   main
@@ -31,6 +28,7 @@ data Bebida = Cafe | Te | Leche | Naranjada | Agua
 
 data Musica = Piano | Bateria | Guitarra | Teclado | Violin
     deriving (Eq, Show)
+
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 data AnEntry = AnEntry ID
@@ -49,10 +47,6 @@ instance EntryGet AnEntry Nacion  where getV _ (AnEntry _ _ n _ _ _) = n
 instance EntryGet AnEntry Animal  where getV _ (AnEntry _ _ _ a _ _) = a
 instance EntryGet AnEntry Bebida  where getV _ (AnEntry _ _ _ _ b _) = b
 instance EntryGet AnEntry Musica  where getV _ (AnEntry _ _ _ _ _ m) = m
-
---    get (AccessibleDescriptor "ID") = undefined
---    get vd (AnEntry id color nacion animal bebida musica) =
---        case vd of ((AccessibleDescriptor "ID") :: AccessibleDescriptor ID) -> id
 
 
 instance Accessible ID     where modifiable _    = False
