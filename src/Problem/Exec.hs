@@ -22,11 +22,14 @@ module Problem.Exec (
 , applyARule
 , applyRules
 
+, showHistory
+
 ) where
 
 import qualified Data.Map as M
 
 import Data.Maybe    (fromMaybe, maybeToList)
+import Data.List     (intercalate)
 import Control.Monad (mzero)
 
 import Problem.Statement
@@ -81,7 +84,7 @@ getResultEntries (SPossible es)      = es
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 
-newtype ETable e = ETable (M.Map Id e) deriving Show
+newtype ETable e = ETable (M.Map Id e)
 
 newETable :: (a -> (Id, e)) -> [a] -> ETable e
 newETable f as = ETable $ M.fromList (map f as)
@@ -92,7 +95,8 @@ getEntry id (ETable mp) = mp M.! id
 setEntry :: (Entry e) => e -> ETable e -> ETable e
 setEntry e (ETable mp) = ETable $ M.adjust (const e) (getId e) mp
 
-
+instance (Show e) => Show (ETable e) where
+    show (ETable mp) = intercalate "\n" $ map show (M.elems mp)
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
@@ -158,14 +162,17 @@ applyARule r = applyS (extractRule r)
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
-applyRules rs t = applyRules' rs t []
+applyRules rs t = res
+    where res = applyRules' rs t []
 
 applyRules' (r:rs) t acc = let (t', res) = applyARule r t
                          in applyRules' rs t' ((r, res):acc)
 applyRules' [] t acc = (t, acc)
 
+showHistory((rule, results):hs) = str ++ showHistory hs
+        where str    = "|| " ++ show rule ++ "\n" ++ resStr ++ "\n\n"
+              resStr = concatMap (("\n\t\t" ++) . show) results
 
-
-
+showHistory [] = ""
 
 

@@ -10,7 +10,6 @@ module Problem(
 , EntryGet(..)
 , EntryAccessible(..)
 
-
 , Rule(..)
 , KnownFacts
 
