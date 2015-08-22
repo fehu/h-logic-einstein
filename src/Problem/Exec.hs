@@ -20,6 +20,7 @@ module Problem.Exec (
 
 , applyS
 , applyARule
+, applyRules
 
 ) where
 
@@ -51,6 +52,7 @@ data SApplyResult v = SImplies  { what   :: [SEntry v]
                     | SConfirm  [SEntry v]
                     | SEmpty    [SEntry v]
                     | SPossible [SEntry v]
+                    deriving Show
 
 
 isSuccess        :: SApplyResult v -> Bool
@@ -139,15 +141,28 @@ applyARule2 rule t ((k1, e1):kes1) ((k2, e2):kes2) acc =
 applyARule2  _ t [] [] acc = (t, acc)
 
 -- TODO: stop if broken
+applyS :: (EntryValExt e) => SApply e -> ETable e -> (ETable e, [SApplyResult (Value e)])
+
 applyS (SApply1 f) t@(ETable mp) = applyARule1 f t ids []
                                 where ids = M.assocs mp
-applyS (SApply2 f) t@(ETable mp) = applyARule2 f t ids ids []
-                                where ids = M.assocs mp
+
+applyS (SApply2 f) t@(ETable mp) = apply ids t []
+    where apply (i:is) t' acc = let ids1 = replicate (length ids) i
+                                    (t'', res) = applyARule2 f t ids1 ids []
+                                in apply is t'' (res ++ acc)
+          apply [] t' acc = (t', acc)
+          ids = M.assocs mp
 
 
 applyARule r = applyS (extractRule r)
 
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
+applyRules rs t = applyRules' rs t []
+
+applyRules' (r:rs) t acc = let (t', res) = applyARule r t
+                         in applyRules' rs t' ((r, res):acc)
+applyRules' [] t acc = (t, acc)
 
 
 

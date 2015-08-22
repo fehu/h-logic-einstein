@@ -26,7 +26,8 @@ data Rule e = Rule { ruleName        :: String
                    , ruleDescription :: Maybe String
                    , ruleDef         :: DSLContainerContainer e
                    }
-                   deriving Show
+
+instance Show (Rule e) where show = show . ruleName
 
 type KnownFacts e = [Rule e]
 
