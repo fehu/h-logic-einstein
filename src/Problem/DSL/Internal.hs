@@ -17,8 +17,10 @@ import Problem.Exec
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- Containers
 
-data DSLKnownContainer entry = forall a b. ( Eq a, Accessible a, Show a
-                                           , Eq b, Accessible b, Show b) =>
+
+
+data DSLKnownContainer entry = forall a b. ( Eq a, EntryAccessible entry a, Show a
+                                           , Eq b, EntryAccessible entry b, Show b) =>
                                  DSLKnownContainer a (entry -> Maybe a)
                                                    b (entry -> Maybe b)
 
@@ -26,18 +28,37 @@ instance Show (DSLKnownContainer e) where
     show (DSLKnownContainer a _ b _) = show a ++ " <==> " ++ show b
 
 
-instance (EntryId e) => DSLContainer DSLKnownContainer e where
-    test e1 e2 (DSLKnownContainer a fa b fb) =
-        case (left, right) of (Just True,  Nothing  )  -> SImplies  [p2] [p1]
-                              (Nothing,    Just True)  -> SImplies  [p1] [p2]
-                              (Just True,  Just True)  -> SConfirm  [p1, p2]
-                              (Just False, Just False) -> SEmpty    [p1, p2]
-                              (Nothing,    Nothing)    -> SPossible [p1, p2]
-                              _                        -> SBroken   [p1, p2]
-        where left  = fmap (== a) (fa e1)
-              right = fmap (== b) (fb e2)
-              p1 = (getId e1, [Value a])
-              p2 = (getId e2, [Value b])
+applyKC' eL eR (a, ga) (b, gb) =
+    case (left, right) of (Just True,  Nothing  )  -> SImplies  [pR] [pL]
+                          (Nothing,    Just True)  -> SImplies  [pL] [pR]
+                          (Just True,  Just True)  -> SConfirm  [pL, pR]
+                          (Just False, Just False) -> SEmpty    [pL, pR]
+                          (Nothing,    Nothing)    -> SPossible [pL, pR]
+                          _                        -> SBroken   [pL, pR]
+    where left  = fmap (== a) (ga eL)
+          right = fmap (== b) (gb eR)
+          pL = (getId eL, [Value a])
+          pR = (getId eR, [Value b])
+
+
+applyKC1 :: (Entry e) => e -> DSLKnownContainer e -> SApplyResult (Value e)
+applyKC1 e (DSLKnownContainer a ga b gb) = applyKC' e e (a, ga) (b, gb)
+
+applyKC2 :: (Entry e) => e -> e -> DSLKnownContainer e -> SApplyResult (Value e)
+applyKC2 e1 e2 (DSLKnownContainer a ga b gb) = applyKC' e1 e2 (a, ga) (b, gb)
+--    case (left, right) of (Just True,  Nothing  )  -> SImplies  [p2] [p1]
+--                          (Nothing,    Just True)  -> SImplies  [p1] [p2]
+--                          (Just True,  Just True)  -> SConfirm  [p1, p2]
+--                          (Just False, Just False) -> SEmpty    [p1, p2]
+--                          (Nothing,    Nothing)    -> SPossible [p1, p2]
+--                          _                        -> SBroken   [p1, p2]
+--    where left  = fmap (== a) (fa e1)
+--          right = fmap (== b) (fb e2)
+--          p1 = (getId e1, [Value a])
+--          p2 = (getId e2, [Value b])
+
+instance (Entry e) => DSLContainer DSLKnownContainer e where
+    applyC kc = SApply1 (`applyKC1` kc)
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
@@ -46,12 +67,14 @@ data DSLCondContainer1 entry = forall v. DSLCondContainer1 (Maybe v -> Maybe v -
                                                            (AccessibleDescriptor v)
 
 instance Show (DSLCondContainer1 e) where
-    show (DSLCondContainer1 _ _ (AccessibleDescriptor v)) = "Condition over v"
+    show (DSLCondContainer1 _ _ (AccessibleDescriptor v)) = "Condition over " ++ show v
 
-instance (EntryId e) => DSLContainer DSLCondContainer1 e where
-    test e1 e2 c | testCCond1 c e1 e2 = SConfirm p
-                 | otherwise          = SBroken  p
-        where p = map (\e -> (getId e, [])) [e1, e2]
+instance (Entry e) => DSLContainer DSLCondContainer1 e where
+    applyC c = SApply2 (applyCC1 c)
+
+applyCC1 c e1 e2 | testCCond1 c e1 e2 = SConfirm $ p e1 e2
+                 | otherwise          = SBroken  $ p e1 e2
+    where p e1 e2 = map (\e -> (getId e, [])) [e1, e2]
 
 testCCond1 :: DSLCondContainer1 e -> e -> e -> Bool
 testCCond1 (DSLCondContainer1 f get _) e1 e2 = f (get e1) (get e2)
@@ -64,35 +87,55 @@ data DSLKnownCondContainer1 entry = DSLKnownCondContainer1 (DSLKnownContainer en
 instance Show (DSLKnownCondContainer1 e) where
     show (DSLKnownCondContainer1 known cond) = "[" ++ show known ++ ", " ++ show cond ++ "]"
 
-instance (EntryId e) => DSLContainer DSLKnownCondContainer1 e where
-    test e1 e2 (DSLKnownCondContainer1 kc cc) =
-        if isSuccess known then if      isSuccess      cond then known
-                                else if isUndetermined cond then poss
-                                                            else cond
-                           else known
-        where known = test e1 e2 kc
-              cond  = test e1 e2 cc
-              poss  = SPossible $ getResultEntries known
+instance (Entry e) => DSLContainer DSLKnownCondContainer1 e where
+    applyC (DSLKnownCondContainer1 kc cc) = SApply2 apply
+        where apply e1 e2 | isSuccess known && isSuccess      cond = known
+                          | isSuccess known && isUndetermined cond = poss
+                          | isSuccess known                        = cond
+                          | otherwise                              = known
+                  where known = applyKC2 e1 e2 kc
+                        cond  = applyCC1 cc e1 e2
+                        poss = SPossible $ getResultEntries known
+
+--    applyC e1 e2 (DSLKnownCondContainer1 kc cc) =
+--        if isSuccess known then if      isSuccess      cond then known
+--                                else if isUndetermined cond then poss
+--                                                            else cond
+--                           else known
+--        where known = applyC e1 e2 kc
+--              cond  = applyC e1 e2 cc
+--              poss  = SPossible $ getResultEntries known
+
+
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+
+data DSLKnownPureContainer1 e = DSLKnownPureContainer1 (DSLKnownContainer e)
+
+instance Show (DSLKnownPureContainer1 e) where
+    show (DSLKnownPureContainer1 c) = show c
+
+
+
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- instance DSLExpression
 
-instance ( Accessible a, EntryGet e a
-         , Accessible b, EntryGet e b
-         , EntryId e) =>
+instance ( Accessible a, EntryGet e a, EntryAccessible e a
+         , Accessible b, EntryGet e b, EntryAccessible e b
+         , Entry e) =>
     DSLExpression (DSLKnown a b) e
     where
         boxExpression = DSLC . dsl2CKnown
 
 
-instance (Accessible v, EntryGet e v, EntryId e) => DSLExpression (DSLCondition1 v) e where
+instance (Accessible v, EntryGet e v, Entry e) => DSLExpression (DSLCondition1 v) e where
     boxExpression = DSLC . dsl2CCond1
 
-instance ( Accessible a, EntryGet e a
-         , Accessible b, EntryGet e b
+instance ( Accessible a, EntryGet e a, EntryAccessible e a
+         , Accessible b, EntryGet e b, EntryAccessible e b
          , Accessible v, EntryGet e v
-         , EntryId e ) =>
+         , Entry e ) =>
     DSLExpression (DSLKnownCond1 a b v) e
     where
         boxExpression (DSLKnownCond1 known cond) = DSLC $ DSLKnownCondContainer1 k c

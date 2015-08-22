@@ -14,7 +14,7 @@ module Problem.Statement (
 
 , Entry(..)
 , EntryGet(..)
-, EntryId(..)
+, EntryAccessible(..)
 
 --, Statement(..)
 --, Known(..)
@@ -27,19 +27,29 @@ class (Show v, Eq v) => Accessible v where
     modifiable    :: v -> Bool
     varDescriptor :: v -> AccessibleDescriptor v
 
-data Value = forall v. (Accessible v) => Value v
-
 newtype AccessibleDescriptor v = AccessibleDescriptor String
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 class Entry e where
-    get   :: (Accessible v, EntryGet e v) => AccessibleDescriptor v -> e -> e
+    getId :: e -> Id
+
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 class (Entry e) => EntryGet e v where
-    getV :: (Accessible v) => AccessibleDescriptor v -> e -> Maybe v
+    getV     :: (Accessible v) => AccessibleDescriptor v -> e -> Maybe v
+    setV     :: (Accessible v) => e -> v -> Maybe e
+    clearV   :: (Accessible v) => AccessibleDescriptor v -> e -> Maybe e
 
 
+class (Accessible v) => EntryAccessible e v where
+    updateEntry :: v -> e -> Maybe e
+
+data Value e = forall v. (EntryAccessible e v) => Value v
+
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+
+data Id = forall i. (Show i, IdRepr i) => Id i
 
 class IdRepr a where getRepr :: a -> String
                      getOrd  :: a -> Int
@@ -47,14 +57,10 @@ class IdRepr a where getRepr :: a -> String
 isSameId :: (IdRepr a, IdRepr b) => a -> b -> Bool
 isSameId x y = getRepr x == getRepr y
 
-data Id = forall i. (Show i, IdRepr i) => Id i
-
 instance Show Id where show (Id i)        = show i
 instance Eq   Id where (Id i1) == (Id i2) = isSameId  i1 i2
 instance Ord  Id where (Id i1) <= (Id i2) = getOrd i1 <= getOrd i2
 
-class (Entry e) => EntryId e where
-    getId :: e -> Id
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
@@ -67,4 +73,7 @@ class (Entry e) => EntryId e where
 --               | Condition (Known v a) v (a -> a -> Bool)
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+
+
+
 

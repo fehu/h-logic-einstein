@@ -38,7 +38,7 @@ data DSLKnownCond2 a b v1 v2 = DSLKnownCond2 (DSLKnown a b) (DSLCondition2 v1 v2
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 class DSLContainer c e where
-    test :: e -> e -> c e -> SApplyResult Value
+    applyC :: c e -> SApply e
 
 data DSLContainerContainer e = forall c. (DSLContainer c e, Show (c e)) => DSLC (c e)
 

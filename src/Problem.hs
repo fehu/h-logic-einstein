@@ -8,8 +8,10 @@ module Problem(
 
 , Entry(..)
 , EntryGet(..)
-, EntryId(..)
+, EntryAccessible(..)
 
+
+, Rule(..)
 , KnownFacts
 
 , (<==>)

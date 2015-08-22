@@ -1,13 +1,20 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE MultiParamTypeClasses
+           , FlexibleInstances
+           , FlexibleContexts
+           , UndecidableInstances
+         #-}
 
 module Example1 (
   main
 ) where
 
 import Data.List (intercalate)
+import Control.Arrow ((&&&))
 
 import Problem
 import Problem.DSL.Internal
+
+import Problem.Exec
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
@@ -31,25 +38,42 @@ data Musica = Piano | Bateria | Guitarra | Teclado | Violin
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
-data AnEntry = AnEntry ID
-                       (Maybe Color)
-                       (Maybe Nacion)
-                       (Maybe Animal)
-                       (Maybe Bebida)
-                       (Maybe Musica)
+data AnEntry = AnEntry { casaId :: ID
+                       , color  :: Maybe Color
+                       , nacion :: Maybe Nacion
+                       , animal :: Maybe Animal
+                       , bebida :: Maybe Bebida
+                       , musica :: Maybe Musica
+                       }
+             deriving Show
 
 instance IdRepr ID where getRepr = show
                          getOrd  = fromEnum
 
-instance Entry   AnEntry where get _ = id
-instance EntryId AnEntry where getId (AnEntry i _ _ _ _ _) = Id i
+instance Entry   AnEntry where
+    getId (AnEntry i _ _ _ _ _) = Id i
 
-instance EntryGet AnEntry ID      where getV _ (AnEntry i _ _ _ _ _) = Just i
-instance EntryGet AnEntry Color   where getV _ (AnEntry _ c _ _ _ _) = c
-instance EntryGet AnEntry Nacion  where getV _ (AnEntry _ _ n _ _ _) = n
-instance EntryGet AnEntry Animal  where getV _ (AnEntry _ _ _ a _ _) = a
-instance EntryGet AnEntry Bebida  where getV _ (AnEntry _ _ _ _ b _) = b
-instance EntryGet AnEntry Musica  where getV _ (AnEntry _ _ _ _ _ m) = m
+instance EntryGet AnEntry ID      where getV _ = Just . casaId
+                                        setV _ _ = Nothing
+                                        clearV _ _ = Nothing
+instance EntryGet AnEntry Color   where getV _ = color
+                                        setV e a = Just $ e {color  = Just a}
+                                        clearV _ e = Just $ e {color = Nothing}
+instance EntryGet AnEntry Nacion  where getV _ = nacion
+                                        setV e a = Just $ e {nacion = Just a}
+                                        clearV _ e = Just $ e {color = Nothing}
+instance EntryGet AnEntry Animal  where getV _ = animal
+                                        setV e a = Just $ e {animal = Just a}
+                                        clearV _ e = Just $ e {color = Nothing}
+instance EntryGet AnEntry Bebida  where getV _ = bebida
+                                        setV e a = Just $ e {bebida = Just a}
+                                        clearV _ e = Just $ e {color = Nothing}
+instance EntryGet AnEntry Musica  where getV _ = musica
+                                        setV e a = Just $ e {musica = Just a}
+                                        clearV _ e = Just $ e {color = Nothing}
+
+instance (Accessible v, EntryGet AnEntry v) => EntryAccessible AnEntry v
+    where updateEntry = flip setV
 
 
 instance Accessible ID     where modifiable _    = False
@@ -104,8 +128,23 @@ aIzquierdaDe = flip aDerechaDe
 --         ]
 
 
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
+newEntry i = AnEntry i Nothing Nothing Nothing Nothing Nothing
+
+table = newETable (Id &&& newEntry) (enumFrom A)
+
+
+instance EntryValExt AnEntry where setValue (Value v) = updateEntry v
+
+res1 = applyARule ("9" -: C <==> Leche) table
 
 main :: IO()
-main = putStrLn $ intercalate "\n" (map show facts)
+main = do putStrLn "facts:"
+          putStrLn $ intercalate "\n" (map show facts)
+          putStrLn "\n-- table: "
+          print table
+          putStrLn "== apply 1st rule =="
+          putStrLn "-- table: "
+          print $ fst res1
 
