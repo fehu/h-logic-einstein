@@ -46,16 +46,6 @@ applyKC1 e (DSLKnownContainer a ga b gb) = applyKC' e e (a, ga) (b, gb)
 
 applyKC2 :: (Entry e) => e -> e -> DSLKnownContainer e -> SApplyResult (Value e)
 applyKC2 e1 e2 (DSLKnownContainer a ga b gb) = applyKC' e1 e2 (a, ga) (b, gb)
---    case (left, right) of (Just True,  Nothing  )  -> SImplies  [p2] [p1]
---                          (Nothing,    Just True)  -> SImplies  [p1] [p2]
---                          (Just True,  Just True)  -> SConfirm  [p1, p2]
---                          (Just False, Just False) -> SEmpty    [p1, p2]
---                          (Nothing,    Nothing)    -> SPossible [p1, p2]
---                          _                        -> SBroken   [p1, p2]
---    where left  = fmap (== a) (fa e1)
---          right = fmap (== b) (fb e2)
---          p1 = (getId e1, [Value a])
---          p2 = (getId e2, [Value b])
 
 instance (Entry e) => DSLContainer DSLKnownContainer e where
     applyC kc = SApply1 (`applyKC1` kc)
@@ -96,15 +86,6 @@ instance (Entry e) => DSLContainer DSLKnownCondContainer1 e where
                   where known = applyKC2 e1 e2 kc
                         cond  = applyCC1 cc e1 e2
                         poss = SPossible $ getResultEntries known
-
---    applyC e1 e2 (DSLKnownCondContainer1 kc cc) =
---        if isSuccess known then if      isSuccess      cond then known
---                                else if isUndetermined cond then poss
---                                                            else cond
---                           else known
---        where known = applyC e1 e2 kc
---              cond  = applyC e1 e2 cc
---              poss  = SPossible $ getResultEntries known
 
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --

@@ -31,9 +31,8 @@ data Rule e = Rule { ruleName        :: String
 type KnownFacts e = [Rule e]
 
 instance RuleDefinition Rule e where
-    applyRule Rule{ruleDef = (DSLC c)} = applyC c
+    extractRule Rule{ruleDef = (DSLC c)} = applyC c
 
---    applyRule r e1 e2 = case ruleDef r of DSLC c -> applyC e1 e2 c
 
 name -: expr = Rule name Nothing (boxExpression expr)
 rule |:: descr = rule { ruleDescription = Just descr }
@@ -42,4 +41,3 @@ infix 3 -:
 infix 2 |::
 
 
---dslToInternal :: KnownFacts e -> [DSLContainerContainer e]
