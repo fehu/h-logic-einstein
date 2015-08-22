@@ -116,30 +116,14 @@ facts = [ -- "№2"  -:   Ingles <==> Roja                  |:: "El inglés vive
 type CondFunc1 v = Maybe v -> Maybe v -> Bool
 
 enseguida :: CondFunc1 ID
-Just x `enseguida` Just y  = succ x == y || pred x == y
+Just x `enseguida` Just y  = (maxBound :: ID) /= x && succ x == y ||
+                             (minBound :: ID) /= x && pred x == y
+--Just x `enseguida` Just y  = succ x == y || pred x == y
 
 aDerechaDe :: CondFunc1 ID
-Just x `aDerechaDe` Just y = succ y == x
+Just x `aDerechaDe` Just y = (maxBound :: ID) /= y && succ y == x
 
 aIzquierdaDe = flip aDerechaDe
-
-
---         , Verde <--> Cafe           --  4
---         , Ruso <--> Te              --  5
-
---         , Piano <--> Caracoles      --  7
---         , Amarilla <--> Bateria     --  8
-
---         , A <--> Noruego            -- 10
-
---         , enseguida Caballo Bateria -- 12
---         , Violin <--> Naranjada     -- 13
---         , Japones <--> Teclado      -- 14
---         , enseguida Noruego Azul    -- 15
---         , constr16                  -- 16
---         , enseguida Perro Leche     -- 17
---         ]
-
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
@@ -162,4 +146,12 @@ main = do putStrLn "facts:"
           print $ snd res1
           putStrLn "-- table: "
           print $ fst res1
+
+
+
+
+
+
+
+
 

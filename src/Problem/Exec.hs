@@ -148,7 +148,7 @@ applyS (SApply1 f) t@(ETable mp) = applyARule1 f t ids []
 
 applyS (SApply2 f) t@(ETable mp) = apply ids t []
     where apply (i:is) t' acc = let ids1 = replicate (length ids) i
-                                    (t'', res) = applyARule2 f t ids1 ids []
+                                    (t'', res) = applyARule2 f t' ids1 ids []
                                 in apply is t'' (res ++ acc)
           apply [] t' acc = (t', acc)
           ids = M.assocs mp
