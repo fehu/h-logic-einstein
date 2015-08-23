@@ -140,16 +140,31 @@ instance EntryValExt AnEntry where setValue (Value v) = updateEntry v
 
 res1 = applyRules facts table
 
+ctx :: ExecContext Rule AnEntry
+ctx = newExecContext table
+
+res2 = solveProblem ctx facts (Just 10)
+
 main :: IO()
 main = do putStrLn "facts:"
           putStrLn $ intercalate "\n" (map show facts)
           putStrLn "\n-- table: "
           print table
-          putStrLn "== apply 1st rule =="
+
+          putStrLn "== apply rules =="
           putStrLn "-- history: "
           putStrLn . showHistory . snd $ res1
           putStrLn "-- table: "
           print $ fst res1
+
+          putStrLn "== run solveProblem =="
+          let (c', r', a') = res2
+          putStrLn "-- history:"
+          putStrLn $ concatMap ((++ "\n") . showHistory) a'
+          putStrLn "-- context:"
+          print c'
+          putStrLn "-- result:"
+          print r'
 
 
 

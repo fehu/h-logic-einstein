@@ -23,8 +23,8 @@ import Problem.Exec
 
 data DSLKnownContainer entry = forall a b. ( Eq a, EntryAccessible entry a, Show a
                                            , Eq b, EntryAccessible entry b, Show b) =>
-                                 DSLKnownAtomsContainer a (entry -> Maybe a)
-                                                        b (entry -> Maybe b)
+                                  DSLKnownAtomsContainer a (entry -> Maybe a)
+                                                         b (entry -> Maybe b)
                              | forall a b. ( Eq a, EntryAccessible entry a, Show a
                                            , Eq b, EntryAccessible entry b) =>
                                   DSLKnownConstraintContainer  a                 (entry -> Maybe a)
@@ -71,13 +71,6 @@ applyKC2 e1 e2 (DSLKnownAtomsContainer a ga b gb) = applyKC' e1 e2 (a, ga) (b, g
 
 instance (Entry e) => DSLContainer DSLKnownContainer e where
     applyC kc = SApply1 (`applyKC1` kc)
-
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-
---data DSLConstraintContainer entry = forall a b. ( Eq a, EntryAccessible entry a, Show a
---                                                , Eq b, EntryAccessible entry b, Show b) =>
---                                 DSLConstraintContainer a                 (entry -> Maybe a)
---                                                        (Maybe b -> Bool) (entry -> Maybe b)
 
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
