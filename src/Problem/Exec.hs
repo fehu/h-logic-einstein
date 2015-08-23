@@ -166,13 +166,13 @@ data RuleResult r e = RuleContradicts r [SApplyResult e]
                     | RuleApplies     r (SApplyResult e)
                     | RuleMultiple    r [SApplyResult e]
                     | RuleUnmatched   r [SApplyResult e]
+                    deriving Show
 
-
-instance (Show r) => Show (RuleResult r e) where
-    show (RuleContradicts r _) = "RuleContradicts " ++ show r
-    show (RuleApplies     r _) = "RuleApplies "     ++ show r
-    show (RuleMultiple    r _) = "RuleMultiple "    ++ show r
-    show (RuleUnmatched   r _) = "RuleUnmatched "   ++ show r
+--instance (Show r) => Show (RuleResult r e) where
+--    show (RuleContradicts r _) = "RuleContradicts " ++ show r
+--    show (RuleApplies     r _) = "RuleApplies "     ++ show r
+--    show (RuleMultiple    r _) = "RuleMultiple "    ++ show r
+--    show (RuleUnmatched   r _) = "RuleUnmatched "   ++ show r
 
 executeRule r t = apply
     where res = applyS (extractRule r) t
@@ -314,14 +314,21 @@ newHypotheses rrs = HypothesesLevel hQueue hFailed cRule chQueue ch chFailed
                                    return $ Hypothesis ws
                      return (r, HypothesesAlt hyps)
 
+
 -- solve by depth
 solveProblem' stop t rs acc =
-    case res of Left rrs | stop acc             -> (t, Stopped, acc)
-                         | any ruleImplies rrs  -> solveProblem' stop t' rs (res:acc)
-                         | any ruleMultiple rrs -> (t', NewHypotheses $ newHypotheses rrs, acc)
-                         | otherwise            -> (t', CanDoNothing rrs, acc)
-                Right rc                        -> (t', FallbackRequired rc, acc)
+    case res of Left rrs | stop acc            -> (t, Stopped, acc)
+                         | any ruleImplies rrs -> solveProblem' stop t' rs (res:acc)
+                         | otherwise           -> (t', notImplies rrs, acc)
+                Right rc                       -> (t', FallbackRequired rc, acc)
     where (t', res) = applyRules rs t
+          notImplies rrs =
+            let omf r = ruleMultiple r && all isImplies (ruleResults r)
+                onlyMultiple = filter omf rrs
+            in case onlyMultiple of [] -> CanDoNothing rrs
+                                    ms -> NewHypotheses $ newHypotheses ms
+          isImplies (SImplies _ _) = True
+          isImplies _ = False
 
 
 
