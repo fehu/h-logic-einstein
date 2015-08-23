@@ -9,6 +9,7 @@ module Problem.DSL (
 
 , (<==>)
 , (|?>)
+, (!?)
 
 , (-:)
 , (|::)
@@ -19,6 +20,8 @@ import Problem.DSL.Struct
 import Problem.Exec
 
 x <==> y = DSLKnown (DSLAtomic x) (DSLAtomic y)
+x !? c   = DSLKnown (DSLAtomic x) (DSLConstraint c)
+
 k |?> f  = DSLKnownCond1 k (DSLCondition1 f)
 
 

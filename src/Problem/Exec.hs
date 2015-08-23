@@ -167,10 +167,10 @@ executeRule r t = apply
     where res = applyS (extractRule r) t
           broken = filter isFailure res
           imply  = filter isSuccess res
-          apply | not . null $ broken = RuleContradicts r broken
-                | length imply == 1   = RuleApplies     r (head imply)
-                | not . null $ imply  = RuleMultiple    r imply
-                | otherwise           = RuleUnmatched   r res
+          apply | length broken == length res = RuleContradicts r broken
+                | length imply == 1           = RuleApplies     r (head imply)
+                | not . null $ imply          = RuleMultiple    r imply
+                | otherwise                   = RuleUnmatched   r res
 
 ruleContradicts (RuleContradicts _ _) = True
 ruleContradicts _ = False

@@ -23,17 +23,19 @@ import Problem.Exec
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 data DSLStatement v = DSLAtomic v
-                    | DSLConstraint (v -> Bool)
+                    | DSLConstraint (Maybe v -> Bool)
                     | DSLAnd [DSLStatement v]
                     | DSLOr  [DSLStatement v]
 
 data DSLKnown a b = DSLKnown (DSLStatement a) (DSLStatement b)
 
 data DSLCondition1 v     = DSLCondition1 (Maybe v -> Maybe v -> Bool)
-data DSLCondition2 v1 v2 = DSLCondition2 ((v1,v2) -> (v1,v2) -> Bool)
+data DSLCondition2 v1 v2 = DSLCondition2 ((v1,v2) -> (v1,v2) -> Bool) -- TODO
 
 data DSLKnownCond1 a b v     = DSLKnownCond1 (DSLKnown a b) (DSLCondition1 v)
 data DSLKnownCond2 a b v1 v2 = DSLKnownCond2 (DSLKnown a b) (DSLCondition2 v1 v2)
+
+--data DSLKnownConstraint a v = DSLKnownConstraint (DSLStatement a)
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 

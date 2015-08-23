@@ -110,7 +110,7 @@ facts = [ "№2"  -:   Ingles <==> Roja                  |:: "El inglés vive en
         , "№13" -:   Violin <==> Naranjada             |:: "El violinista bebe naranjada."
         , "№14" -:  Japones <==> Teclado               |:: "El japonés toca el teclado."
         , "№15" -:  Noruego <==> Azul    |?> enseguida |:: "El noruego vive a lado de la casa azul."
---        , "№16" -:  Japones TODO
+        , "№16" -:  Japones  !?  tieneUnSoloVicino     |:: "El japonés solo tiene un vicino."
         , "№17" -:    Perro <==> Leche   |?> enseguida |:: "El quien tiene perro vive junto al quien toma leche."
         ]
 
@@ -125,6 +125,9 @@ aDerechaDe :: CondFunc1 ID
 Just x `aDerechaDe` Just y = (maxBound :: ID) /= y && succ y == x
 
 aIzquierdaDe = flip aDerechaDe
+
+tieneUnSoloVicino :: Maybe ID -> Bool
+tieneUnSoloVicino (Just id) = id == maxBound || id == minBound
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 

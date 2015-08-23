@@ -8,6 +8,8 @@ module Problem.DSL.Internal (
 
 ) where
 
+import Data.Maybe (maybeToList)
+
 import Problem.DSL.Struct
 import Problem.Statement
 import Problem.Exec
@@ -21,34 +23,62 @@ import Problem.Exec
 
 data DSLKnownContainer entry = forall a b. ( Eq a, EntryAccessible entry a, Show a
                                            , Eq b, EntryAccessible entry b, Show b) =>
-                                 DSLKnownContainer a (entry -> Maybe a)
-                                                   b (entry -> Maybe b)
+                                 DSLKnownAtomsContainer a (entry -> Maybe a)
+                                                        b (entry -> Maybe b)
+                             | forall a b. ( Eq a, EntryAccessible entry a, Show a
+                                           , Eq b, EntryAccessible entry b) =>
+                                  DSLKnownConstraintContainer  a                 (entry -> Maybe a)
+                                                               (Maybe b -> Bool) (entry -> Maybe b)
 
 instance Show (DSLKnownContainer e) where
-    show (DSLKnownContainer a _ b _) = show a ++ " <==> " ++ show b
+    show (DSLKnownAtomsContainer a _ b _) = show a ++ " <==> " ++ show b
 
 
 applyKC' eL eR (a, ga) (b, gb) =
-    case (left, right) of (Just True,  Nothing  )  -> SImplies  [pR] [pL]
-                          (Nothing,    Just True)  -> SImplies  [pL] [pR]
-                          (Just True,  Just True)  -> SConfirm  [pL, pR]
---                          (Just False, Just False) -> SBroken   [pL, pR]
---                          (Nothing,    Nothing)    -> SEmpty    [pL, pR]
-                          _                        -> SEmpty   [pL, pR]
-    where left  = fmap (== a) (ga eL)
-          right = fmap (== b) (gb eR)
-          pL = (getId eL, [Value a])
-          pR = (getId eR, [Value b])
+    case (left, right) of (Just True,  Nothing  )  -> SImplies  [implR] pr
+                          (Nothing,    Just True)  -> SImplies  [implL] pr
+                          (Just True,  Just True)  -> SConfirm  pr
+                          (Just False, Just False) -> SBroken   pr
+                          (Nothing,    Nothing)    -> SEmpty    pr
+                          _                        -> SBroken   pr
+    where vA = ga eL
+          vB = gb eR
+          left  = fmap (== a) vA
+          right = fmap (== b) vB
+          implL = (getId eL, [Value a])
+          implR = (getId eR, [Value b])
+          pL    = (getId eL, mbValList vA)
+          pR    = (getId eR, mbValList vB)
+          pr    = [pL, pR]
 
+
+mbValList v = maybeToList $ fmap Value v
 
 applyKC1 :: (Entry e) => e -> DSLKnownContainer e -> SApplyResult (Value e)
-applyKC1 e (DSLKnownContainer a ga b gb) = applyKC' e e (a, ga) (b, gb)
+applyKC1 e (DSLKnownAtomsContainer a ga b gb) = applyKC' e e (a, ga) (b, gb)
+applyKC1 e (DSLKnownConstraintContainer a ga f gv) =
+    if f . gv $ e then case fmap (== a) (ga e) of Just True  -> SConfirm pr
+                                                  Just False -> SBroken  pr
+                                                  _          -> SImplies [pi] pr
+                  else SEmpty [p, pC]
+    where p  = (getId e, mbValList $ ga e)
+          pC = (getId e, mbValList $ gv e)
+          pi = (getId e, [Value a])
+          pr = [p, pC]
 
 applyKC2 :: (Entry e) => e -> e -> DSLKnownContainer e -> SApplyResult (Value e)
-applyKC2 e1 e2 (DSLKnownContainer a ga b gb) = applyKC' e1 e2 (a, ga) (b, gb)
+applyKC2 e1 e2 (DSLKnownAtomsContainer a ga b gb) = applyKC' e1 e2 (a, ga) (b, gb)
 
 instance (Entry e) => DSLContainer DSLKnownContainer e where
     applyC kc = SApply1 (`applyKC1` kc)
+
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+
+--data DSLConstraintContainer entry = forall a b. ( Eq a, EntryAccessible entry a, Show a
+--                                                , Eq b, EntryAccessible entry b, Show b) =>
+--                                 DSLConstraintContainer a                 (entry -> Maybe a)
+--                                                        (Maybe b -> Bool) (entry -> Maybe b)
+
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
@@ -110,13 +140,17 @@ instance ( Accessible a, EntryGet e a, EntryAccessible e a
                                                 where k = dsl2CKnown known
                                                       c = dsl2CCond1 cond
 
-cStatement :: (EntryGet entry v, Accessible v) => DSLStatement v -> (v, entry -> Maybe v)
-cStatement (DSLAtomic v) = (v, getV $ varDescriptor v)
+cAtomStatement :: (EntryGet entry v, Accessible v) => DSLStatement v -> (v, entry -> Maybe v)
+cAtomStatement (DSLAtomic v) = (v, getV $ varDescriptor v)
 -- TODO
 
-dsl2CKnown (DSLKnown s1 s2) = DSLKnownContainer a ga b gb
-                                      where (a, ga) = cStatement s1
-                                            (b, gb) = cStatement s2
+dsl2CKnown (DSLKnown s1@(DSLAtomic _) s2@(DSLAtomic _)) =
+    DSLKnownAtomsContainer a ga b gb where (a, ga) = cAtomStatement s1
+                                           (b, gb) = cAtomStatement s2
+
+dsl2CKnown (DSLKnown s1@(DSLAtomic _) s2@(DSLConstraint f)) =
+    DSLKnownConstraintContainer a ga f gv where (a, ga) = cAtomStatement s1
+                                                gv = getV $ varDescriptor (undefined :: v)
 
 cCond1 vd f = DSLCondContainer1 f (getV vd) vd
 
