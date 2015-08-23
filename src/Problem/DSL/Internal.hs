@@ -32,9 +32,9 @@ applyKC' eL eR (a, ga) (b, gb) =
     case (left, right) of (Just True,  Nothing  )  -> SImplies  [pR] [pL]
                           (Nothing,    Just True)  -> SImplies  [pL] [pR]
                           (Just True,  Just True)  -> SConfirm  [pL, pR]
-                          (Just False, Just False) -> SEmpty    [pL, pR]
-                          (Nothing,    Nothing)    -> SPossible [pL, pR]
-                          _                        -> SBroken   [pL, pR]
+--                          (Just False, Just False) -> SBroken   [pL, pR]
+--                          (Nothing,    Nothing)    -> SEmpty    [pL, pR]
+                          _                        -> SEmpty   [pL, pR]
     where left  = fmap (== a) (ga eL)
           right = fmap (== b) (gb eR)
           pL = (getId eL, [Value a])
