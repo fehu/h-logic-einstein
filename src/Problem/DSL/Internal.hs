@@ -41,7 +41,7 @@ applyKC' eL eR (a, ga) (b, gb) =
                           (Nothing,    Just True)  -> SImplies  [implL] pr
                           (Just True,  Just True)  -> SConfirm  pr
                           (Just False, Just False) -> SBroken   pr
-                          (Nothing,    Nothing)    -> SEmpty    pr
+                          (Nothing,    Nothing)    -> SPossible [implL, implR]
                           _                        -> SBroken   pr
     where vA = ga eL
           vB = gb eR
@@ -62,7 +62,7 @@ applyKC1 e (DSLKnownConstraintContainer a ga f gv _) =
     if f . gv $ e then case fmap (== a) (ga e) of Just True  -> SConfirm pr
                                                   Just False -> SBroken  pr
                                                   _          -> SImplies [pi] pr
-                  else SEmpty [p, pC]
+                  else SPossible [pi]
     where p  = (getId e, mbValList $ ga e)
           pC = (getId e, mbValList $ gv e)
           pi = (getId e, [Value a])
@@ -88,7 +88,7 @@ instance (Entry e) => DSLContainer DSLCondContainer1 e where
     applyC c = SApply2 (applyCC1 c)
 
 applyCC1 c e1 e2 | testCCond1 c e1 e2 = SConfirm $ p e1 e2
-                 | otherwise          = SEmpty   $ p e1 e2
+                 | otherwise          = SBroken  $ p e1 e2
     where p e1 e2 = map (\e -> (getId e, [])) [e1, e2]
 
 testCCond1 :: DSLCondContainer1 e -> e -> e -> Bool
@@ -104,9 +104,9 @@ instance Show (DSLKnownCondContainer1 e) where
 
 instance (Entry e) => DSLContainer DSLKnownCondContainer1 e where
     applyC (DSLKnownCondContainer1 kc cc) = SApply2 apply
-        where apply e1 e2 | isSuccess known && isSuccess      cond = known
-                          | isSuccess known                        = cond
-                          | otherwise                              = known
+        where apply e1 e2 | isSuccess known && isSuccess cond = known
+                          | isFailure cond                    = cond
+                          | otherwise                         = known
                   where known = applyKC2 e1 e2 kc
                         cond  = applyCC1 cc e1 e2
 

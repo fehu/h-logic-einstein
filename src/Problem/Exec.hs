@@ -36,6 +36,8 @@ import Data.Maybe    (fromMaybe, maybeToList)
 import Data.List     (intercalate)
 import Control.Monad (mzero)
 
+import GHC.Exts
+
 import Problem.Statement
 
 
@@ -57,8 +59,8 @@ data SApplyResult v = SImplies  { what   :: [SEntry v]
                                 }
                     | SBroken   [SEntry v]
                     | SConfirm  [SEntry v]
-                    | SEmpty    [SEntry v]
---                    | SPossible [SEntry v]
+--                    | SEmpty    [SEntry v]
+                    | SPossible [SEntry v]
                     deriving Show
 
 
@@ -74,15 +76,15 @@ isSuccess _              = False
 isFailure (SBroken _) = True
 isFailure _           = False
 
-isUndetermined (SEmpty _)    = True
---isUndetermined (SPossible _) = True
+--isUndetermined (SEmpty _)    = True
+isUndetermined (SPossible _) = True
 isUndetermined _             = False
 
 getResultEntries SImplies {what = w} = w
 getResultEntries (SBroken es)        = es
 getResultEntries (SConfirm es)       = es
-getResultEntries (SEmpty es)         = es
---getResultEntries (SPossible es)      = es
+--getResultEntries (SEmpty es)         = es
+getResultEntries (SPossible es)      = es
 
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
@@ -310,34 +312,41 @@ solveProblemInner c rs mbMax acc = (solveContext t h, res, acc' ++ acc)
                       stop acc = maybe False (length acc ==) mbMax
 
 
-newHypotheses rrs = HypothesesLevel hQueue hFailed cRule chQueue ch chFailed
+newHypotheses rrs = NewHypotheses $
+    HypothesesLevel hQueue hFailed cRule chQueue ch chFailed
     where hQueue   = tail hAlts
           (cRule, HypothesesAlt cha) = head hAlts
           ch       = head cha
           chQueue  = HypothesesAlt $ tail cha
           hFailed  = []
           chFailed = HypothesesAlt []
-          hAlts = do (RuleMultiple r rs) <- rrs
-                     let hyps = do (SImplies ws _) <- rs
-                                   return $ Hypothesis ws
-                     return (r, HypothesesAlt hyps)
+          hAlts = do (RuleMultiple rule rs) <- rrs
+                     let hyps = map (Hypothesis . getResultEntries) rs
+                     return (rule, HypothesesAlt hyps)
 
 
 -- solve by depth
 solveProblemInner' stop t rs acc =
     case res of Left rrs | stop acc            -> (t, Stopped, acc)
                          | any ruleImplies rrs -> solveProblemInner' stop t' rs (res:acc)
-                         | otherwise           -> (t', notImplies rrs, res:acc)
+                         | otherwise           -> (t', tryPossible rrs, res:acc)
                 Right (rc, rcAcc)              -> (t', FallbackRequired rc, Left rcAcc : acc)
     where (t', res) = applyRules rs t
-          notImplies rrs =
-            let omf r = ruleMultiple r && all isImplies (ruleResults r)
-                onlyMultiple = filter omf rrs           -- TODO: empties also can mean multiple !!!
-            in case onlyMultiple of [] -> CanDoNothing
-                                    ms -> NewHypotheses $ newHypotheses ms
-          isImplies (SImplies _ _) = True
-          isImplies _ = False
-
+          tryPossible rrs =
+            let count = possibleCount rrs
+                imply = possibleImply count
+            in if not . null $ imply
+                then undefined -- TODO
+               else if not . null $ count
+                then newHypotheses $ map (uncurry RuleMultiple . snd)
+                                         (sortWith fst count)
+               else CanDoNothing
+          possibleCount rrs = do (RuleUnmatched r rs) <- rrs
+                                 let prs = filter isUndetermined rs
+                                 return (length prs, (r, prs))
+          possibleImply = filter ((== 1) . fst)
+          -- TODO single possibility => RuleApplies SImplies
+          -- various possibilities => RuleMultiple SPossible
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 

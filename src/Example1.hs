@@ -117,12 +117,12 @@ facts = [ "№2"  -:   Ingles <==> Roja                  |:: "El inglés vive en
 type CondFunc1 v = Maybe v -> Maybe v -> Bool
 
 enseguida :: CondFunc1 ID
-Just x `enseguida` Just y  = (maxBound :: ID) /= x && succ x == y ||
-                             (minBound :: ID) /= x && pred x == y
---Just x `enseguida` Just y  = succ x == y || pred x == y
+Just x `enseguida` Just y  = x /= y &&
+                             ((maxBound :: ID) /= x && succ x == y ||
+                              (minBound :: ID) /= x && pred x == y )
 
 aDerechaDe :: CondFunc1 ID
-Just x `aDerechaDe` Just y = (maxBound :: ID) /= y && succ y == x
+Just x `aDerechaDe` Just y = x /= y && (maxBound :: ID) /= y && succ y == x
 
 aIzquierdaDe = flip aDerechaDe
 
