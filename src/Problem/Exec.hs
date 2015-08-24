@@ -326,27 +326,41 @@ newHypotheses rrs = NewHypotheses $
 
 
 -- solve by depth
+solveProblemInner' :: (EntryValExt e, RuleDefinition rule e) =>
+    ([ApplyRsEither (rule e) e] -> Bool) ->
+    ETable e ->
+    [rule e] ->
+    [ApplyRsEither (rule e) e] ->
+    (ETable e, SolveInnerResult rule e, [ApplyRsEither (rule e) e])
+
+-- single possibility    => RuleApplies  SImplies
+-- various possibilities => RuleMultiple SPossible
 solveProblemInner' stop t rs acc =
     case res of Left rrs | stop acc            -> (t, Stopped, acc)
                          | any ruleImplies rrs -> solveProblemInner' stop t' rs (res:acc)
-                         | otherwise           -> (t', tryPossible rrs, res:acc)
+                         | otherwise           -> tryPossible rrs
                 Right (rc, rcAcc)              -> (t', FallbackRequired rc, Left rcAcc : acc)
     where (t', res) = applyRules rs t
           tryPossible rrs =
             let count = possibleCount rrs
-                imply = possibleImply count
-            in if not . null $ imply
-                then undefined -- TODO
+                toApply = do (1, (rule, [SPossible rs])) <- count
+                             return $ RuleApplies rule $ SImplies rs []
+            in if not . null $ toApply
+                then let t'' = applyRules'' t' toApply
+                         res' = Left toApply
+                     in solveProblemInner' stop t'' rs (res':res:acc)
                else if not . null $ count
-                then newHypotheses $ map (uncurry RuleMultiple . snd)
-                                         (sortWith fst count)
-               else CanDoNothing
+                then let nh = newHypotheses $ map (uncurry RuleMultiple . snd)
+                                                  (sortWith fst count)
+                     in (t', nh, res:acc)
+               else (t', CanDoNothing, res:acc)
           possibleCount rrs = do (RuleUnmatched r rs) <- rrs
                                  let prs = filter isUndetermined rs
                                  return (length prs, (r, prs))
           possibleImply = filter ((== 1) . fst)
-          -- TODO single possibility => RuleApplies SImplies
-          -- various possibilities => RuleMultiple SPossible
+          applyRules'' t (RuleApplies _ (SImplies r _) : rs) = applyRules'' (updSEntry t r) rs
+          applyRules'' t  [] = t
+
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
