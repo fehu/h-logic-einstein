@@ -29,9 +29,11 @@ data DSLKnownContainer entry = forall a b. ( Eq a, EntryAccessible entry a, Show
                                            , Eq b, EntryAccessible entry b) =>
                                   DSLKnownConstraintContainer  a                 (entry -> Maybe a)
                                                                (Maybe b -> Bool) (entry -> Maybe b)
+                                                                           (AccessibleDescriptor b)
 
 instance Show (DSLKnownContainer e) where
-    show (DSLKnownAtomsContainer a _ b _) = show a ++ " <==> " ++ show b
+    show (DSLKnownAtomsContainer      a _ b _) = show a ++ " <==> " ++ show b
+    show (DSLKnownConstraintContainer a _ _ _ vd) = show a ++ " !? " ++ show vd
 
 
 applyKC' eL eR (a, ga) (b, gb) =
@@ -56,7 +58,7 @@ mbValList v = maybeToList $ fmap Value v
 
 applyKC1 :: (Entry e) => e -> DSLKnownContainer e -> SApplyResult (Value e)
 applyKC1 e (DSLKnownAtomsContainer a ga b gb) = applyKC' e e (a, ga) (b, gb)
-applyKC1 e (DSLKnownConstraintContainer a ga f gv) =
+applyKC1 e (DSLKnownConstraintContainer a ga f gv _) =
     if f . gv $ e then case fmap (== a) (ga e) of Just True  -> SConfirm pr
                                                   Just False -> SBroken  pr
                                                   _          -> SImplies [pi] pr
@@ -142,8 +144,9 @@ dsl2CKnown (DSLKnown s1@(DSLAtomic _) s2@(DSLAtomic _)) =
                                            (b, gb) = cAtomStatement s2
 
 dsl2CKnown (DSLKnown s1@(DSLAtomic _) s2@(DSLConstraint f)) =
-    DSLKnownConstraintContainer a ga f gv where (a, ga) = cAtomStatement s1
-                                                gv = getV $ varDescriptor (undefined :: v)
+    DSLKnownConstraintContainer a ga f gv vd where (a, ga) = cAtomStatement s1
+                                                   vd = varDescriptor (undefined :: v)
+                                                   gv = getV vd
 
 cCond1 vd f = DSLCondContainer1 f (getV vd) vd
 

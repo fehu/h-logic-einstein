@@ -25,17 +25,19 @@ x !? c   = DSLKnown (DSLAtomic x) (DSLConstraint c)
 k |?> f  = DSLKnownCond1 k (DSLCondition1 f)
 
 
-data Rule e = Rule { ruleName        :: String
+data Rule e = Rule { ruleName'       :: String
                    , ruleDescription :: Maybe String
                    , ruleDef         :: DSLContainerContainer e
                    }
+                   deriving Show
 
-instance Show (Rule e) where show = show . ruleName
+--instance Show (Rule e) where show = show . ruleName'
 
 type KnownFacts e = [Rule e]
 
 instance RuleDefinition Rule e where
     extractRule Rule{ruleDef = (DSLC c)} = applyC c
+    ruleName = ruleName'
 
 
 name -: expr = Rule name Nothing (boxExpression expr)

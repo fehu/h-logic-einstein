@@ -148,19 +148,19 @@ res2 = solveProblem ctx facts (Just 10)
 main :: IO()
 main = do putStrLn "facts:"
           putStrLn $ intercalate "\n" (map show facts)
-          putStrLn "\n-- table: "
-          print table
+--          putStrLn "\n-- table: "
+--          print table
 
-          putStrLn "== apply rules =="
-          putStrLn "-- history: "
-          putStrLn . showHistory . snd $ res1
-          putStrLn "-- table: "
-          print $ fst res1
+--          putStrLn "== apply rules =="
+--          putStrLn "-- history: "
+--          putStrLn . showHistory . snd $ res1
+--          putStrLn "-- table: "
+--          print $ fst res1
 
           putStrLn "== run solveProblem =="
           let (c', r', a') = res2
           putStrLn "-- history:"
-          putStrLn $ concatMap ((++ "\n") . showHistory) a'
+          putStrLn $ showHistory a'
           putStrLn "-- context:"
           print c'
           putStrLn "-- result:"

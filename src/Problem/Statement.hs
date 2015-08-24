@@ -29,6 +29,9 @@ class (Show v, Eq v) => Accessible v where
 
 newtype AccessibleDescriptor v = AccessibleDescriptor String
 
+instance Show (AccessibleDescriptor v) where
+    show (AccessibleDescriptor name) = name
+
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 class Entry e where

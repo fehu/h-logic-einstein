@@ -1,4 +1,4 @@
-{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances #-} -- , FlexibleContexts
+{-# LANGUAGE MultiParamTypeClasses, FlexibleInstances, FlexibleContexts #-}
 
 
 module Problem.Exec (
@@ -34,7 +34,6 @@ import qualified Data.Map as M
 
 import Data.Maybe    (fromMaybe, maybeToList)
 import Data.List     (intercalate)
---import Data.Monoid
 import Control.Monad (mzero)
 
 import Problem.Statement
@@ -109,14 +108,15 @@ instance (Show e) => Show (ETable e) where
 class (Entry e) => EntryValExt e where
     setValue :: Value e -> e -> Maybe e
 
-class RuleDefinition r e where
+class (Show (r e)) => RuleDefinition r e where
     extractRule :: r e -> SApply e
+    ruleName    :: r e -> String
 
 
 
-updT selE t ((id, vs):entries) = updT selE t' entries
+updT getE t ((id, vs):entries) = updT getE t' entries
                        where t' = setEntry e' t
-                             e' = setVs (selE id) vs
+                             e' = setVs (getE id) vs
 updT _ t [] = t
 setVs e (v:vs) = let mbE = setValue v e
                  in setVs (fromMaybe e mbE) vs
@@ -125,28 +125,7 @@ setVs e [] = e
 updSEntry :: (EntryValExt e) =>  ETable e -> [SEntry (Value e)] -> ETable e
 updSEntry t = updT (`getEntry` t) t
 
---applyARule1 rule t ((k, e):kes) acc =
---    let result = rule e
---    in applyARule1 rule t kes (result:acc)
---
---applyARule1 _ t [] acc = (t, acc)
---
---applyARule2 rule t ((k1, e1):kes1) ((k2, e2):kes2) acc =
---    let applyRes = rule e1 e2
---        result = if k1 /= k2
---            then case applyRes of res@(SImplies what _) ->
---                                        Just (updT selE t what, res)
---                                            where selE id | getId e1 == id = e1
---                                                          | getId e2 == id = e2
---                                  res -> Just (t, res)
---            else Nothing
---        t' = maybe t fst result
---        res = maybeToList $ fmap snd result
---    in applyARule2 rule t' kes1 kes2 (res ++ acc)
---
---applyARule2  _ t [] [] acc = (t, acc)
 
--- TODO: stop if broken
 applyS :: (EntryValExt e) => SApply e -> ETable e -> [SApplyResult (Value e)]
 
 applyS (SApply1 f) (ETable mp) = map (f . snd) (M.assocs mp)
@@ -156,23 +135,20 @@ applyS (SApply2 f) (ETable mp) = do (i1, e1) <- ies
                                     (i2, e2) <- ies
                                     return $ f e1 e2
                               where ies = M.assocs mp
---    where apply (i:is) t' acc = let ids1 = replicate (length ids) i
---                                    (t'', res) = f t' ids1 ids []
---                                in apply is t'' (res ++ acc)
---          apply [] t' acc = (t', acc)
 
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
-data RuleResult r e = RuleContradicts r [SApplyResult e]
-                    | RuleApplies     r (SApplyResult e)
-                    | RuleMultiple    r [SApplyResult e]
-                    | RuleUnmatched   r [SApplyResult e]
+data RuleResult r e = RuleContradicts r [SApplyResult (Value e)]
+                    | RuleApplies     r (SApplyResult (Value e))
+                    | RuleMultiple    r [SApplyResult (Value e)]
+                    | RuleUnmatched   r [SApplyResult (Value e)]
                     deriving Show
 
---instance (Show r) => Show (RuleResult r e) where
---    show (RuleContradicts r _) = "RuleContradicts " ++ show r
---    show (RuleApplies     r _) = "RuleApplies "     ++ show r
---    show (RuleMultiple    r _) = "RuleMultiple "    ++ show r
---    show (RuleUnmatched   r _) = "RuleUnmatched "   ++ show r
+showRule :: (RuleDefinition r e) => RuleResult (r e) e -> String
+showRule (RuleContradicts r _) = "RuleContradicts " ++ ruleName r
+showRule (RuleApplies     r _) = "RuleApplies "     ++ ruleName r
+showRule (RuleMultiple    r _) = "RuleMultiple "    ++ ruleName r
+showRule (RuleUnmatched   r _) = "RuleUnmatched "   ++ ruleName r
 
 executeRule r t = apply
     where res = applyS (extractRule r) t
@@ -203,48 +179,51 @@ applyARule r t =
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
-type ApplyRsSuccess r e = [RuleResult (r e) (Value e)]
-type ApplyRsFailure r e =  RuleResult (r e) (Value e)
+type ApplyRsSuccess r e = [RuleResult r e]
+type ApplyRsFailure r e = (RuleResult r e, [RuleResult r e])
 
 type ApplyRsEither r e = Either (ApplyRsSuccess r e) (ApplyRsFailure r e)
 
 applyRules :: (RuleDefinition r e, EntryValExt e) =>
-                            [r e] -> ETable e -> (ETable e, ApplyRsEither r e)
+                            [r e] -> ETable e -> (ETable e, ApplyRsEither (r e) e)
 applyRules rs t = res
     where res = applyRules' rs t (Left [])
 
 applyRules' (r:rs) t (Left acc) = let (t', res) = applyARule r t
                          in if ruleContradicts res
-                            then (t, Right res)
+                            then (t, Right (res, acc))
                             else applyRules' rs t' (Left (res:acc))
 applyRules' [] t acc = (t, acc)
 
-showHistory :: (Show (r e)) => ApplyRsEither r e -> String
+showHistoryInner :: (Show (r e), RuleDefinition r e) => ApplyRsEither (r e) e -> String
 
-showHistory (Left success)  = str
+showHistoryInner (Left success)  = str
                         where str = resStr
                               resStr = do r <- success
                                           let rS = concatMap (("\n\t\t" ++) . show) (ruleResults r)
-                                          " | " ++ show r ++ rS ++ "\n\n"
-showHistory (Right failure) = "!! " ++ show failure
+                                          " | " ++ showRule r ++ rS ++ "\n\n"
+showHistoryInner (Right failure) = "!! " ++ show failure
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- -- Solving
 
-data SolveResult r e = -- HadProgress ??
-                       NewHypotheses    (HypothesesLevel r e)
-                     | FallbackRequired (RuleResult (r e) (Value e))
-                     | CanDoNothing     [RuleResult (r e) (Value e)]
-                     | Stopped
-                     deriving Show
+data SolveInnerResult r e = NewHypotheses    (HypothesesLevel r e)
+                          | FallbackRequired (RuleResult (r e) e)
+                          | CanDoNothing
+                          | Stopped
 
-newtype Hypothesis e = Hypothesis [(Id, [Value e])]    deriving Show
-newtype HypothesesAlt e = HypothesesAlt [Hypothesis e] deriving Show
+instance (Show (r e)) => Show (SolveInnerResult r e) where
+    show (NewHypotheses hl)     = "NewHypotheses:\n"    ++ show hl
+    show (FallbackRequired res) = "FallbackRequired:\n" ++ show res
+    show CanDoNothing           = "CanDoNothing"
+    show Stopped                = "Stopped"
 
---instance Monoid (HypothesesAlt e) where
---    mempty = HypothesesAlt []
---    mappend (HypothesesAlt xs) (HypothesesAlt ys) = HypothesesAlt $ mappend xs ys
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+
+newtype Hypothesis e = Hypothesis [(Id, [Value e])]
+newtype HypothesesAlt e = HypothesesAlt [Hypothesis e]
+
 
 type Hypotheses r e = [(r e, HypothesesAlt e)]
 
@@ -256,47 +235,76 @@ data HypothesesLevel r e = HypothesesLevel {
     , currentHyp  :: Hypothesis e
     , currentHypF :: HypothesesAlt e
     }
-    deriving Show
 
---instance (Show (r e)) => Show (HypothesesLevel r e) where
---    show hl = "* HypothesesLevel:\n" ++
---              "  - current rule: " ++ (show $ currentRule hl) ++
---              "  - current: "      ++ (show $ currentHyp hl)
+showHypothesis indent (Hypothesis hs) = intercalate "\n" $ map f hs
+            where f (k, vs) = indent ++ show k ++ " : " ++ show vs
 
+showHypothesesAlt indent (HypothesesAlt hhs) =
+        indent ++ "** Alternative Hypotheses:\n" ++
+        intercalate betweenAlts (map (showHypothesis (indent ++ "\t")) hhs)
+
+    where betweenAlts = "\n" ++ indent ++ replicate 10 '=' ++ "\n"
+
+
+showHypotheses indent hhs = intercalate ("\n" ++ indent) hStrs
+    where hStrs = concatMap (\(r, hs) -> ["| " ++ show r, hAltStr hs]) hhs
+          hAltStr = showHypothesesAlt (indent ++ "\t")
+
+instance (Show (r e)) => Show (HypothesesLevel r e) where
+    show hl = "* HypothesesLevel:"      ++
+              "\n  - current rule: "    ++ show (currentRule  hl) ++
+              "\n  - current: "         ++ showHypothesis    "\t" (currentHyp   hl) ++
+              "\n  - current queue:\n"  ++ showHypothesesAlt "\t" (currentHypQ  hl) ++
+              "\n  - current tried:\n"  ++ showHypothesesAlt "\t" (currentHypF  hl) ++
+              "\n  - failed hypotheses : "  ++ showHypotheses "\t\t" (hypsFailed hl) ++
+              "\n  - hypotheses in queue: " ++ showHypotheses "\t\t" (hypsInQueue hl)
+
+
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 class ContextTable c e where
-    contextTable :: c e -> ETable e
+    contextTable    :: c e -> ETable e
+    updContextTable :: c e -> ETable e -> c e
 
 class ContextHypotheses c e r where
-    contextHypotheses :: c e -> [HypothesesLevel r e]
+    contextHypotheses    :: c e -> [HypothesesLevel r e]
+    updContextHypotheses :: c e -> [HypothesesLevel r e] -> c e
 
 class (ContextTable c e, ContextHypotheses c e r) => SolveContext c e r where
     solveContext :: ETable e -> [HypothesesLevel r e] -> c e
 
 
-newtype ExecContext r e = ExecContext (ETable e, [HypothesesLevel r e]) deriving Show
+newtype ExecContext r e = ExecContext (ETable e, [HypothesesLevel r e])
 
 newExecContext t = ExecContext (t, [])
 
 instance ContextTable (ExecContext r) e where
     contextTable (ExecContext (t, _)) = t
+    updContextTable (ExecContext (_, h)) t = ExecContext (t, h)
 
 instance ContextHypotheses (ExecContext r) e r where
     contextHypotheses (ExecContext (_, h)) = h
+    updContextHypotheses (ExecContext (t, _)) h = ExecContext (t, h)
 
 instance SolveContext (ExecContext r) e r where
     solveContext = curry ExecContext
 
---instance (Show e) => Show (ExecContext r e) where
---    show (ExecContext (t, h)) = "Table:\n" ++ show t ++ "\n\n" ++
---                                "Hypotheses:\n" ++ show h ++ "\n"
+instance (Show (r e), Show e) => Show (ExecContext r e) where
+    show (ExecContext (t, hs)) = "Table:\n" ++ show t ++ "\n\n" ++
+                                 "Hypotheses:\n" ++ intercalate "\n"(map show hs) ++ "\n"
 
 
-solveProblem :: (SolveContext context e rule, EntryValExt e, RuleDefinition rule e) =>
-    context e -> [rule e] -> Maybe Int  -> (context e, SolveResult rule e, [ApplyRsEither rule e])
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
-solveProblem c rs mbMax = (solveContext t h, res, acc)
-                where (t, res, acc) = solveProblem' stop (contextTable c) rs []
+solveProblemInner :: (SolveContext context e rule, EntryValExt e, RuleDefinition rule e) =>
+    context e ->
+    [rule e] ->
+    Maybe Int  ->
+    [ApplyRsEither (rule e) e] ->
+        (context e, SolveInnerResult rule e, [ApplyRsEither (rule e) e])
+
+solveProblemInner c rs mbMax acc = (solveContext t h, res, acc' ++ acc)
+                where (t, res, acc') = solveProblemInner' stop (contextTable c) rs []
                       h = case res of NewHypotheses hl -> hl : contextHypotheses c
                                       _                -> contextHypotheses c
                       stop acc = maybe False (length acc ==) mbMax
@@ -316,23 +324,77 @@ newHypotheses rrs = HypothesesLevel hQueue hFailed cRule chQueue ch chFailed
 
 
 -- solve by depth
-solveProblem' stop t rs acc =
+solveProblemInner' stop t rs acc =
     case res of Left rrs | stop acc            -> (t, Stopped, acc)
-                         | any ruleImplies rrs -> solveProblem' stop t' rs (res:acc)
-                         | otherwise           -> (t', notImplies rrs, acc)
-                Right rc                       -> (t', FallbackRequired rc, acc)
+                         | any ruleImplies rrs -> solveProblemInner' stop t' rs (res:acc)
+                         | otherwise           -> (t', notImplies rrs, res:acc)
+                Right (rc, rcAcc)              -> (t', FallbackRequired rc, Left rcAcc : acc)
     where (t', res) = applyRules rs t
           notImplies rrs =
             let omf r = ruleMultiple r && all isImplies (ruleResults r)
-                onlyMultiple = filter omf rrs
-            in case onlyMultiple of [] -> CanDoNothing rrs
+                onlyMultiple = filter omf rrs           -- TODO: empties also can mean multiple !!!
+            in case onlyMultiple of [] -> CanDoNothing
                                     ms -> NewHypotheses $ newHypotheses ms
           isImplies (SImplies _ _) = True
           isImplies _ = False
 
 
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+
+data SolveResult r e = SolveSuccess (SolveInnerResult r e)
+                     | SolveFailure (SolveInnerResult r e)
+
+instance (Show (r e)) => Show (SolveResult r e) where
+    show (SolveSuccess rs) = " * ** Success ** *\n" ++ show rs
+    show (SolveFailure rs) = " * ** Failure ** *\n" ++ show rs
+
+solveResult (SolveSuccess res) = res
+solveResult (SolveFailure res) = res
+
+isSolved (SolveSuccess _) = True
+isSolved _ = False
+
+data SolveHistoryEntry rule e = SHistEntry (SolveInnerResult rule e) [ApplyRsEither (rule e) e]
+                              | SHypApply  (rule e) (Hypothesis e) (HypothesesAlt e)
+
+type SolveHistory rule e = [SolveHistoryEntry rule e]
+
+showHistory :: (Show (r e), RuleDefinition r e) => SolveHistory r e -> String
+
+showHistory (SHistEntry res acc : hs) =
+    replicate 20 '=' ++
+    "\n" ++ show res ++
+    betweenHEntries  ++
+    intercalate betweenHEntries (map showHistoryInner acc) ++
+    "\n" ++ showHistory hs
+
+    where betweenHEntries = "\n" ++ replicate 20 '-' ++ "\n"
+
+showHistory (SHypApply r h ah : hs) =
+    replicate 20 '=' ++
+    "\n" ++ show r ++ " =>\n" ++ showHypothesis "" h ++ " :\n" ++
+                                 showHypothesesAlt "\t" ah ++
+    "\n" ++ showHistory hs
+
+showHistory [] = ""
 
 
+solveProblem :: (SolveContext context e rule, EntryValExt e, RuleDefinition rule e) =>
+    context e -> [rule e] -> Maybe Int  -> (context e, SolveResult rule e, SolveHistory rule e)
+
+solveProblem c rs mbMax = solveProblem' c rs mbMax []
+
+solveProblem' c rs mbMax acc =
+    let (c', res, acc') = solveProblemInner c rs mbMax []
+        acc''                  = SHistEntry res acc' : acc
+    in
+      case res of NewHypotheses hl -> let Hypothesis hs = currentHyp hl
+                                          t'' = updSEntry (contextTable c') hs
+                                          c'' = updContextTable c' t''
+                                          hh  = SHypApply (currentRule hl) (currentHyp hl) (currentHypQ hl)
+                                      in solveProblem' c'' rs mbMax (hh : acc'')
+                  _ -> (c', SolveFailure res, acc'')
+--                  FallbackRequired br -> TODO
 
 
 
