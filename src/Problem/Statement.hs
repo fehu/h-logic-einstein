@@ -47,6 +47,7 @@ class (Entry e) => EntryGet e v where
 
 class (Accessible v) => EntryAccessible e v where
     updateEntry :: v -> e -> Maybe e
+    clearEntry  :: v -> e -> Maybe e
 
 data Value e = forall v. (Show v, EntryAccessible e v) => Value v
 

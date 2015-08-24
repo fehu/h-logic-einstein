@@ -31,6 +31,8 @@ data Rule e = Rule { ruleName'       :: String
                    }
                    deriving Show
 
+instance Eq (Rule e) where r1 == r2 = ruleName' r1 == ruleName' r2
+
 --instance Show (Rule e) where show = show . ruleName'
 
 type KnownFacts e = [Rule e]

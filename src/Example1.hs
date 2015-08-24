@@ -9,6 +9,7 @@ module Example1 (
 ) where
 
 import Data.List (intercalate)
+import Data.Map  (size)
 import Control.Arrow ((&&&))
 
 import Problem
@@ -74,7 +75,8 @@ instance EntryGet AnEntry Musica  where getV _ = musica
                                         clearV _ e = Just $ e {color = Nothing}
 
 instance (Accessible v, EntryGet AnEntry v) => EntryAccessible AnEntry v
-    where updateEntry = flip setV
+    where updateEntry  = flip setV
+          clearEntry v = clearV (varDescriptor v)
 
 
 instance Accessible ID     where modifiable _    = False
@@ -136,7 +138,8 @@ newEntry i = AnEntry i Nothing Nothing Nothing Nothing Nothing
 table = newETable (Id &&& newEntry) (enumFrom A)
 
 
-instance EntryValExt AnEntry where setValue (Value v) = updateEntry v
+instance EntryValExt AnEntry where setValue   (Value v) = updateEntry v
+                                   clearValue (Value v) = clearEntry  v
 
 res1 = applyRules facts table
 

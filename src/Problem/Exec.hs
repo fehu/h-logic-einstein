@@ -11,7 +11,7 @@ module Problem.Exec (
 , isUndetermined
 , getResultEntries
 
-, ETable
+, ETable   (..)
 , newETable
 
 , EntryValExt(..)
@@ -25,6 +25,8 @@ module Problem.Exec (
 , showHistory
 
 , solveProblem
+, ContextTable(..)
+--, ContextHypotheses(..)
 , ExecContext
 , newExecContext
 
@@ -34,6 +36,7 @@ import qualified Data.Map as M
 
 import Data.Maybe    (fromMaybe, maybeToList)
 import Data.List     (intercalate)
+import Data.Either   (lefts)
 import Control.Monad (mzero)
 
 import GHC.Exts
@@ -108,12 +111,12 @@ instance (Show e) => Show (ETable e) where
 
 
 class (Entry e) => EntryValExt e where
-    setValue :: Value e -> e -> Maybe e
+    setValue   :: Value e -> e -> Maybe e
+    clearValue :: Value e -> e -> Maybe e
 
 class (Show (r e)) => RuleDefinition r e where
     extractRule :: r e -> SApply e
     ruleName    :: r e -> String
-
 
 
 updT getE t ((id, vs):entries) = updT getE t' entries
@@ -227,6 +230,11 @@ newtype Hypothesis e = Hypothesis [(Id, [Value e])]
 newtype HypothesesAlt e = HypothesesAlt [Hypothesis e]
 
 
+
+lstHypAlt (HypothesesAlt ha)   = ha
+mapHypAlt f (HypothesesAlt ha) = HypothesesAlt $ f ha
+
+
 type Hypotheses r e = [(r e, HypothesesAlt e)]
 
 data HypothesesLevel r e = HypothesesLevel {
@@ -293,7 +301,7 @@ instance SolveContext (ExecContext r) e r where
 
 instance (Show (r e), Show e) => Show (ExecContext r e) where
     show (ExecContext (t, hs)) = "Table:\n" ++ show t ++ "\n\n" ++
-                                 "Hypotheses:\n" ++ intercalate "\n"(map show hs) ++ "\n"
+                                 "Hypotheses:\n" ++ intercalate "\n" (map show hs) ++ "\n"
 
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
@@ -357,9 +365,9 @@ solveProblemInner' stop t rs acc =
           possibleCount rrs = do (RuleUnmatched r rs) <- rrs
                                  let prs = filter isUndetermined rs
                                  return (length prs, (r, prs))
-          possibleImply = filter ((== 1) . fst)
-          applyRules'' t (RuleApplies _ (SImplies r _) : rs) = applyRules'' (updSEntry t r) rs
-          applyRules'' t  [] = t
+
+applyRules'' t (RuleApplies _ (SImplies r _) : rs) = applyRules'' (updSEntry t r) rs
+applyRules'' t  [] = t
 
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
@@ -379,6 +387,8 @@ isSolved _ = False
 
 data SolveHistoryEntry rule e = SHistEntry (SolveInnerResult rule e) [ApplyRsEither (rule e) e]
                               | SHypApply  (rule e) (Hypothesis e) (HypothesesAlt e)
+--                              | SApply     [(rule e, SApplyResult (Value e))]
+                              | SUnapply   (rule e) (Hypothesis e) [(rule e, SApplyResult (Value e))]
 
 type SolveHistory rule e = [SolveHistoryEntry rule e]
 
@@ -399,10 +409,16 @@ showHistory (SHypApply r h ah : hs) =
                                  showHypothesesAlt "\t" ah ++
     "\n" ++ showHistory hs
 
+showHistory (SUnapply r h uns : hs) =
+    replicate 20 '=' ++
+    "\n Unapllied " ++ showHypothesis "" h ++ " for rule " ++ show r ++ ":\n\t" ++
+    intercalate "\n\t" (map show uns) ++
+    "\n" ++ showHistory hs
+
 showHistory [] = ""
 
 
-solveProblem :: (SolveContext context e rule, EntryValExt e, RuleDefinition rule e) =>
+solveProblem :: (Eq (rule e), SolveContext context e rule, EntryValExt e, RuleDefinition rule e) =>
     context e -> [rule e] -> Maybe Int  -> (context e, SolveResult rule e, SolveHistory rule e)
 
 solveProblem c rs mbMax = solveProblem' c rs mbMax []
@@ -416,8 +432,76 @@ solveProblem' c rs mbMax acc =
                                           c'' = updContextTable c' t''
                                           hh  = SHypApply (currentRule hl) (currentHyp hl) (currentHypQ hl)
                                       in solveProblem' c'' rs mbMax (hh : acc'')
+                  FallbackRequired br -> let fb = fallback (contextTable c') (contextHypotheses c') acc
+                                             (t'', h'', hist) = fb
+                                             c'' = solveContext t'' h''
+                                         in if not . null $ h''
+                                            then solveProblem' c'' rs mbMax (hist ++ acc'')
+                                            else (c'', SolveFailure CanDoNothing, acc'')
                   _ -> (c', SolveFailure res, acc'')
---                  FallbackRequired br -> TODO
+
+unapply t rule (SHypApply r _ _ : hs) acc | r == rule = (t, acc)
+                                          | otherwise = error "not same rule"
+
+unapply t rule (SHistEntry _ rs : hs) acc =
+    let (t', acc') = unapply' t (concat $ lefts rs) []
+    in unapply t' rule hs (acc' ++ acc)
+
+unapply t _ [] acc = (t, acc)
+
+-- TODO unapply history
+unapply' t (RuleApplies r i@(SImplies ws _) : rs) iacc =
+    unapply' (f t ws) rs ((r,i):iacc)
+    where
+          f t ((i, vs):ws) = let e  = getEntry i t
+                                 e' = g e vs
+                                 t' = setEntry e' t
+                             in f t' ws
+          f t [] = t
+          g = foldl (\e' v -> fromMaybe e' (clearValue v e'))
+
+unapply' t [] iacc = (t, iacc)
+
+nextHypotheses (hl:hls) | not . null . lstHypAlt $ currentHypQ hl =
+                                let q = currentHypQ hl
+                                in
+                                   hl  { currentHypF = failed
+                                       , currentHyp  = head . lstHypAlt $ q
+                                       , currentHypQ = mapHypAlt tail q
+                                       } :hls
+                        | not . null $ hypsInQueue hl =
+                                let (r, q) = head $ hypsInQueue hl
+                                in hl { currentHypF = HypothesesAlt []
+                                       , currentHyp  = head $ lstHypAlt q
+                                       , currentHypQ = mapHypAlt tail q
+                                       , currentRule = r
+                                       , hypsFailed  = (currentRule hl, failed) : hypsFailed hl
+                                       , hypsInQueue = tail $ hypsInQueue hl
+                                       } :hls
+                        | otherwise = nextHypotheses hls -- TODO: drop the current hyp level
+    where
+          failed = mapHypAlt (currentHyp hl :) (currentHypF hl)
+
+nextHypotheses [] = [] -- error "no more hypotheses"
+
+fallback t hls'@(hl:_) hist = if not . null $ nextHyps then (t'', nextHyps, [apHist, unHist])
+                                                       else (t', [], [])
+    where lastHyp = currentHyp hl
+          rule    = currentRule hl
+          (t', unapplied) = unapply t rule hist []
+          unHist  = SUnapply rule lastHyp unapplied
+
+          nextHyps = nextHypotheses hls'
+          nextHyp  = head nextHyps
+          ch@(Hypothesis vs) = currentHyp nextHyp
+          cr      = currentRule nextHyp
+          toApply = RuleApplies cr (SImplies vs [])
+          t''     = applyRules'' t' [toApply]
+          apHist  = SHypApply cr ch (currentHypQ nextHyp)
+
+
+
+
 
 
 
