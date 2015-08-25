@@ -146,7 +146,7 @@ res1 = applyRules facts table
 ctx :: ExecContext Rule AnEntry
 ctx = newExecContext table
 
-res2 = solveProblem ctx facts (Just 10)
+res2 = solveProblem ctx facts (Just 100)
 
 main :: IO()
 main = do putStrLn "facts:"

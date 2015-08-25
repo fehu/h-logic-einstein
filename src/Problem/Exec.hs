@@ -440,8 +440,10 @@ solveProblem' c rs mbMax acc =
                                             else (c'', SolveFailure CanDoNothing, acc'')
                   _ -> (c', SolveFailure res, acc'')
 
-unapply t rule (SHypApply r _ _ : hs) acc | r == rule = (t, acc)
-                                          | otherwise = error "not same rule"
+unapply t rule (SHypApply r (Hypothesis vs) _ : hs) acc
+    | r == rule = let si = SImplies vs []
+                  in (fst $ unapply' t [RuleApplies r si] [], (r, si) : acc)
+    | otherwise = error "not same rule"
 
 unapply t rule (SHistEntry _ rs : hs) acc =
     let (t', acc') = unapply' t (concat $ lefts rs) []
