@@ -9,6 +9,7 @@ module Problem.DSL (
 
 , (<==>)
 , (|?>)
+, (<?|)
 , (!?)
 
 , (-:)
@@ -22,7 +23,8 @@ import Problem.Exec
 x <==> y = DSLKnown (DSLAtomic x) (DSLAtomic y)
 x !? c   = DSLKnown (DSLAtomic x) (DSLConstraint c)
 
-k |?> f  = DSLKnownCond1 k (DSLCondition1 f)
+k |?> f  = DSLKnownCond1 k (DSLCondition1 f) False
+k <?| f  = DSLKnownCond1 k (DSLCondition1 f) True
 
 
 data Rule e = Rule { ruleName'       :: String

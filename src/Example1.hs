@@ -9,12 +9,9 @@ module Example1 (
 ) where
 
 import Data.List (intercalate)
-import Data.Map  (size)
 import Control.Arrow ((&&&))
 
 import Problem
-import Problem.DSL.Internal
-
 import Problem.Exec
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --

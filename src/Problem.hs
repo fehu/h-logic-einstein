@@ -15,12 +15,17 @@ module Problem(
 
 , (<==>)
 , (|?>)
+, (<?|)
 , (!?)
 
 , (-:)
 , (|::)
 
+, DSLExpression(..)
+
 ) where
 
 import Problem.Statement
 import Problem.DSL
+import Problem.DSL.Internal
+

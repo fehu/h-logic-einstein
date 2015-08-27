@@ -5,7 +5,7 @@
 
 
 module Problem.DSL.Internal (
-
+  DSLExpression(..)
 ) where
 
 import Data.Maybe (maybeToList)
@@ -98,17 +98,21 @@ testCCond1 (DSLCondContainer1 f get _) e1 e2 = f (get e1) (get e2)
 
 data DSLKnownCondContainer1 entry = DSLKnownCondContainer1 (DSLKnownContainer entry)
                                                            (DSLCondContainer1 entry)
+                                                           Bool
 
 instance Show (DSLKnownCondContainer1 e) where
-    show (DSLKnownCondContainer1 known cond) = "[" ++ show known ++ ", " ++ show cond ++ "]"
+    show (DSLKnownCondContainer1 known cond flipped) = "[" ++ show known ++ ", " ++ show cond ++ "]"
 
 instance (Entry e) => DSLContainer DSLKnownCondContainer1 e where
-    applyC (DSLKnownCondContainer1 kc cc) = SApply2 apply
+    applyC (DSLKnownCondContainer1 kc cc flipped) = SApply2 apply
         where apply e1 e2 | isSuccess known && isSuccess cond = known
                           | isFailure cond                    = cond
                           | otherwise                         = known
                   where known = applyKC2 e1 e2 kc
-                        cond  = applyCC1 cc e1 e2
+                        applyCC1' | flipped   = flip a
+                                  | otherwise = a
+                            where a = applyCC1 cc
+                        cond  = applyCC1' e1 e2
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
@@ -131,9 +135,10 @@ instance ( Accessible a, EntryGet e a, EntryAccessible e a
          , Entry e ) =>
     DSLExpression (DSLKnownCond1 a b v) e
     where
-        boxExpression (DSLKnownCond1 known cond) = DSLC $ DSLKnownCondContainer1 k c
-                                                where k = dsl2CKnown known
-                                                      c = dsl2CCond1 cond
+        boxExpression (DSLKnownCond1 known cond flipped) =
+            DSLC $ DSLKnownCondContainer1 k c flipped
+            where k = dsl2CKnown known
+                  c = dsl2CCond1 cond
 
 cAtomStatement :: (EntryGet entry v, Accessible v) => DSLStatement v -> (v, entry -> Maybe v)
 cAtomStatement (DSLAtomic v) = (v, getV $ varDescriptor v)
