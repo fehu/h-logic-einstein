@@ -28,14 +28,13 @@ showRuleResult (RuleUnmatched   r _) = "RuleUnmatched "   ++ ruleName r
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
-showHistoryInner :: (Show (r e), RuleDefinition r e) => ApplyRsEither (r e) e -> String
+showHistoryInner :: (Show (r e), RuleDefinition r e) => [RuleResult (r e) e] -> String
 
-showHistoryInner (Left success)  = str
-                        where str = resStr
-                              resStr = do r <- success
-                                          let rS = concatMap (("\n\t\t" ++) . show) (ruleResults r)
-                                          " | " ++ showRuleResult r ++ rS ++ "\n\n"
-showHistoryInner (Right failure) = "!! " ++ show failure
+showHistoryInner res = do r <- res
+                          let rS = concatMap (("\n\t\t" ++) . show) (ruleResults r)
+                          " | " ++ showRuleResult r ++ rS ++ "\n\n"
+
+--showHistoryInner (Right failure) = "!! " ++ show failure
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
@@ -64,8 +63,9 @@ instance (Show (r e)) => Show (HypothesesLevel r e) where
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
-instance (Show (r e)) => Show (SolveInnerResult r e) where
+instance (Show (r e), RuleDefinition r e) => Show (SolveInnerResult r e) where
     show (NewHypotheses hl)     = "NewHypotheses:\n"    ++ show hl
+    show (RulesApplied res)     = "RulesApplied:\n"     ++ showHistoryInner res
     show (FallbackRequired res) = "FallbackRequired:\n" ++ show res
     show CanDoNothing           = "CanDoNothing"
     show Stopped                = "Stopped"
@@ -85,13 +85,13 @@ showHistory (SHistEntry res acc : hs) =
     replicate 20 '=' ++
     "\n" ++ show res ++
     betweenHEntries  ++
-    intercalate betweenHEntries (map showHistoryInner acc) ++
+    intercalate betweenHEntries (map showHistoryInner [acc]) ++
     "\n" ++ showHistory hs
 
     where betweenHEntries = "\n" ++ replicate 20 '-' ++ "\n"
 
 showHistory (SHypApply r h ah : hs) =
-    replicate 20 '=' ++
+    replicate 20 '=' ++ "apply hypothesis" ++
     "\n" ++ show r ++ " =>\n" ++ showHypothesis "" h ++ " :\n" ++
                                  showHypothesesAlt "\t" ah ++
     "\n" ++ showHistory hs
@@ -106,7 +106,7 @@ showHistory [] = ""
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
-instance (Show (r e)) => Show (SolveResult r e) where
+instance (Show (r e), RuleDefinition r e) => Show (SolveResult r e) where
     show (SolveSuccess rs) = " * ** Success ** *\n" ++ show rs
     show (SolveFailure rs) = " * ** Failure ** *\n" ++ show rs
 

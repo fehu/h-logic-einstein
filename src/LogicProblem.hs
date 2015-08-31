@@ -27,7 +27,7 @@ module LogicProblem (
 , ExecContext
 , newExecContext
 
-, applyRules
+--, applyRules
 , solveProblem
 
 , showHistory

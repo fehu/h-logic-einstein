@@ -23,7 +23,7 @@ unapply t rule (SHypApply r (Hypothesis vs) _ : hs) acc
     | otherwise = error "not same rule"
 
 unapply t rule (SHistEntry _ rs : hs) acc =
-    let (t', acc') = unapply' t (concat $ lefts rs) []
+    let (t', acc') = unapply' t rs []
     in unapply t' rule hs (acc' ++ acc)
 
 unapply t _ [] acc = (t, acc)
@@ -62,4 +62,7 @@ fallback t hls'@(hl:_) hist = if not . null $ nextHyps then (t'', nextHyps, [apH
 fallback t [] hist = error "fail"
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+
+
+
 

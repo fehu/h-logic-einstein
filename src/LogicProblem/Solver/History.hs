@@ -15,9 +15,9 @@ import LogicProblem.Solver.Hypotheses
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
-data SolveHistoryEntry rule e = SHistEntry (SolveInnerResult rule e) [ApplyRsEither (rule e) e]
-                              | SHypApply  (rule e) (Hypothesis e) (HypothesesAlt e)
-                              | SUnapply   (rule e) (Hypothesis e) [(rule e, RApplyResult (Value e))]
+data SolveHistoryEntry rule e = SHistEntry (SolveInnerResult rule e) [RuleResult (rule e) e]
+                              | SHypApply  (rule e) (Hypothesis e)   (HypothesesAlt e)
+                              | SUnapply   (rule e) (Hypothesis e)   [(rule e, RApplyResult (Value e))]
 
 type SolveHistory rule e = [SolveHistoryEntry rule e]
 

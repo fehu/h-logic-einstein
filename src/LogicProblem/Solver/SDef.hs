@@ -16,7 +16,8 @@ import LogicProblem.Solver.Hypotheses
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 data SolveInnerResult r e = NewHypotheses    (HypothesesLevel r e)
-                          | FallbackRequired (RuleResult (r e) e)
+                          | FallbackRequired [RuleResult (r e) e]
+                          | RulesApplied     [RuleResult (r e) e]
                           | CanDoNothing
                           | Stopped
 

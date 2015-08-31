@@ -137,7 +137,7 @@ table = newETable (Id &&& newEntry) (enumFrom A)
 --instance EntryValExt AnEntry where setValue   (Value v) = updateEntry v
 --                                   clearValue (Value v) = clearEntry  v
 
-res1 = applyRules facts table
+--res1 = applyRules facts table
 
 ctx :: ExecContext Rule AnEntry
 ctx = newExecContext table

@@ -6,13 +6,16 @@
 module LogicProblem.Solver.Apply (
 
   executeRule
-, applyARule
-, applyRules
+, executeRules
+--, applyARule
+--, applyRules
 , applyRules''
 
-, ApplyRsEither
-, ApplyRsSuccess
-, ApplyRsFailure
+--, ApplyRsEither
+--, ApplyRsSuccess
+--, ApplyRsFailure
+
+, partitionAlreadyPresent
 
 , EntryValExt(..)
 
@@ -56,6 +59,8 @@ executeRule r t = apply
                 | not . null $ imply          = RuleMultiple    r imply
                 | otherwise                   = RuleUnmatched   r res
 
+executeRules rs t = map (`executeRule` t) rs
+
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 ruleContradicts (RuleContradicts _ _) = True
@@ -93,21 +98,6 @@ setVs e (v:vs) = let mbE = setValue v e
                  in setVs (fromMaybe e mbE) vs
 setVs e [] = e
 
-
---presentInTable t vs = all (notSet' vs) $ listEntries t
---
---notSet :: e -> Value e -> Bool
---notSet e (Value v) = maybe True (/= v) $ getV (varDescriptor v) e
---
---notSet' vs e = all (notSet e) (concatMap snd vs)
-
-
---partitionAlreadyPresent t vs = do e <- listEntries t
---                                  partition (notSet e) vs
---
---notSet :: e -> Value e -> Bool
---notSet e (Value v) = maybe True (/= v) $ getV (varDescriptor v) e
-
 partitionAlreadyPresent t = partition (isAnySet t)
 
 isAnySet t (_, vs) = any (isSet' t) vs
@@ -120,38 +110,34 @@ isSet' t v  = any (isSet v) $ listEntries t
 updREntry t = updT (`getEntry` t) t
 
 
-applyARule r t =
-    case executeRule r t of res@(RuleApplies _ (RImplies x _))
-                                | isPresentInTable t x-> (t, RuleUnmatched r $ results t x)
-                                | otherwise          -> (updREntry t x, res)
-                            res                      -> (t, res)
-    where presentInTable = partitionAlreadyPresent
-          isPresentInTable t vs = not . null . fst $ presentInTable t vs
-          results t vs = let (alreadySet, unSet) = presentInTable t vs
-                         in [RBroken alreadySet, RPossible unSet]
+--applyARule r t =
+--    case executeRule r t of res@(RuleApplies _ (RImplies x _))
+--                                | isPresentInTable t x-> (t, RuleUnmatched r $ results t x)
+--                                | otherwise          -> (updREntry t x, res)
+--                            res                      -> (t, res)
+--    where presentInTable = partitionAlreadyPresent
+--          isPresentInTable t vs = not . null . fst $ presentInTable t vs
+--          results t vs = let (alreadySet, unSet) = presentInTable t vs
+--                         in [RBroken alreadySet, RPossible unSet]
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
-type ApplyRsSuccess r e = [RuleResult r e]
-type ApplyRsFailure r e = (RuleResult r e, [RuleResult r e])
-
-type ApplyRsEither r e = Either (ApplyRsSuccess r e) (ApplyRsFailure r e)
-
---instance Accessible (Value e)
+--type ApplyRsSuccess r e = [RuleResult r e]
+--type ApplyRsFailure r e = (RuleResult r e, [RuleResult r e])
 --
---instance AccessibleEntry e (Value e) where
+--type ApplyRsEither r e = Either (ApplyRsSuccess r e) (ApplyRsFailure r e)
 
 
-applyRules :: (RuleDefinition r e, EntryValExt e) =>
-                        [r e] -> ETable e -> (ETable e, ApplyRsEither (r e) e)
-applyRules rs t = res
-    where res = applyRules' rs t (Left [])
-
-applyRules' (r:rs) t (Left acc) = let (t', res) = applyARule r t
-                         in if ruleContradicts res
-                            then (t, Right (res, acc))
-                            else applyRules' rs t' (Left (res:acc))
-applyRules' [] t acc = (t, acc)
+--applyRules :: (RuleDefinition r e, EntryValExt e) =>
+--                        [r e] -> ETable e -> (ETable e, ApplyRsEither (r e) e)
+--applyRules rs t = res
+--    where res = applyRules' rs t (Left [])
+--
+--applyRules' (r:rs) t (Left acc) = let (t', res) = applyARule r t
+--                         in if ruleContradicts res
+--                            then (t, Right (res, acc))
+--                            else applyRules' rs t' (Left (res:acc))
+--applyRules' [] t acc = (t, acc)
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
