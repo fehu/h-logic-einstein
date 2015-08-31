@@ -1,9 +1,8 @@
 {-# LANGUAGE MultiParamTypeClasses
            , ExistentialQuantification
-           , FlexibleContexts
          #-}
 
-module Problem.Statement (
+module LogicProblem.Solver.Env (
 
   Accessible(..)
 , AccessibleDescriptor(..)
@@ -13,13 +12,18 @@ module Problem.Statement (
 , IdRepr(..)
 
 , Entry(..)
-, EntryGet(..)
-, EntryAccessible(..)
+, AccessibleEntry(..)
 
---, Statement(..)
---, Known(..)
+, ETable(..)
+, newETable
+, getEntry
+, setEntry
 
 ) where
+
+import qualified Data.Map as M
+
+import Data.List (intercalate)
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
@@ -39,17 +43,12 @@ class Entry e where
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
-class (Entry e) => EntryGet e v where
-    getV     :: (Accessible v) => AccessibleDescriptor v -> e -> Maybe v
-    setV     :: (Accessible v) => e -> v -> Maybe e
-    clearV   :: (Accessible v) => AccessibleDescriptor v -> e -> Maybe e
+class (Entry e, Accessible v) => AccessibleEntry e v where
+    getV     :: AccessibleDescriptor v -> e -> Maybe v
+    setV     :: e -> v -> Maybe e
+    clearV   :: AccessibleDescriptor v -> e -> Maybe e
 
-
-class (Accessible v) => EntryAccessible e v where
-    updateEntry :: v -> e -> Maybe e
-    clearEntry  :: v -> e -> Maybe e
-
-data Value e = forall v. (Show v, EntryAccessible e v) => Value v
+data Value e = forall v. (Show v, AccessibleEntry e v) => Value v
 
 instance Show (Value e) where show (Value v) = show v
 
@@ -70,13 +69,19 @@ instance Ord  Id where (Id i1) <= (Id i2) = getOrd i1 <= getOrd i2
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
---data Statement v a = Atomic (v, a)
---                   | Constraint v (a -> Bool)
---                   | And [Statement v a]
---                   | Or [Statement v a]
---
---data Known v a = Known (Statement v a) (Statement v a)
---               | Condition (Known v a) v (a -> a -> Bool)
+newtype ETable e = ETable (M.Map Id e)
+
+newETable :: (a -> (Id, e)) -> [a] -> ETable e
+newETable f as = ETable $ M.fromList (map f as)
+
+getEntry :: Id -> ETable e -> e
+getEntry id (ETable mp) = mp M.! id
+
+setEntry :: (Entry e) => e -> ETable e -> ETable e
+setEntry e (ETable mp) = ETable $ M.adjust (const e) (getId e) mp
+
+instance (Show e) => Show (ETable e) where
+    show (ETable mp) = intercalate "\n" $ map show (M.elems mp)
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 

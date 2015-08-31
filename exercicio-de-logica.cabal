@@ -15,12 +15,21 @@ build-type:          Simple
 cabal-version:       >=1.10
 
 library
-  exposed-modules:     Problem
-                        Problem.Statement
-                        Problem.Exec
-                        Problem.DSL
-                         Problem.DSL.Struct
-                         Problem.DSL.Internal
+  exposed-modules:     LogicProblem
+                       LogicProblem.Rule
+                       LogicProblem.Lang
+                       LogicProblem.Lang.Internal
+                       LogicProblem.Solver
+                       LogicProblem.Solver.Def
+                       LogicProblem.Solver.Env
+                       LogicProblem.Solver.SDef
+                       LogicProblem.Solver.Apply
+                       LogicProblem.Solver.Unapply
+                       LogicProblem.Solver.History
+                       LogicProblem.Solver.Hypotheses
+                       LogicProblem.Solver.Context
+                       LogicProblem.Solver.Show
+
                        Example1
                        Example2
   -- other-modules:

@@ -11,8 +11,7 @@ module Example1 (
 import Data.List (intercalate)
 import Control.Arrow ((&&&))
 
-import Problem
-import Problem.Exec
+import LogicProblem
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
@@ -52,28 +51,28 @@ instance IdRepr ID where getRepr = show
 instance Entry   AnEntry where
     getId (AnEntry i _ _ _ _ _) = Id i
 
-instance EntryGet AnEntry ID      where getV _ = Just . casaId
-                                        setV _ _ = Nothing
-                                        clearV _ _ = Nothing
-instance EntryGet AnEntry Color   where getV _ = color
-                                        setV e a = Just $ e {color  = Just a}
-                                        clearV _ e = Just $ e {color = Nothing}
-instance EntryGet AnEntry Nacion  where getV _ = nacion
-                                        setV e a = Just $ e {nacion = Just a}
-                                        clearV _ e = Just $ e {color = Nothing}
-instance EntryGet AnEntry Animal  where getV _ = animal
-                                        setV e a = Just $ e {animal = Just a}
-                                        clearV _ e = Just $ e {color = Nothing}
-instance EntryGet AnEntry Bebida  where getV _ = bebida
-                                        setV e a = Just $ e {bebida = Just a}
-                                        clearV _ e = Just $ e {color = Nothing}
-instance EntryGet AnEntry Musica  where getV _ = musica
-                                        setV e a = Just $ e {musica = Just a}
-                                        clearV _ e = Just $ e {color = Nothing}
+instance AccessibleEntry AnEntry ID      where getV _ = Just . casaId
+                                               setV _ _ = Nothing
+                                               clearV _ _ = Nothing
+instance AccessibleEntry AnEntry Color   where getV _ = color
+                                               setV e a = Just $ e {color  = Just a}
+                                               clearV _ e = Just $ e {color = Nothing}
+instance AccessibleEntry AnEntry Nacion  where getV _ = nacion
+                                               setV e a = Just $ e {nacion = Just a}
+                                               clearV _ e = Just $ e {color = Nothing}
+instance AccessibleEntry AnEntry Animal  where getV _ = animal
+                                               setV e a = Just $ e {animal = Just a}
+                                               clearV _ e = Just $ e {color = Nothing}
+instance AccessibleEntry AnEntry Bebida  where getV _ = bebida
+                                               setV e a = Just $ e {bebida = Just a}
+                                               clearV _ e = Just $ e {color = Nothing}
+instance AccessibleEntry AnEntry Musica  where getV _ = musica
+                                               setV e a = Just $ e {musica = Just a}
+                                               clearV _ e = Just $ e {color = Nothing}
 
-instance (Accessible v, EntryGet AnEntry v) => EntryAccessible AnEntry v
-    where updateEntry  = flip setV
-          clearEntry v = clearV (varDescriptor v)
+--instance (Accessible v, AccessibleEntry AnEntry v) => EntryAccessible AnEntry v
+--    where updateEntry  = flip setV
+--          clearEntry v = clearV (varDescriptor v)
 
 
 instance Accessible ID     where modifiable _    = False
@@ -135,8 +134,8 @@ newEntry i = AnEntry i Nothing Nothing Nothing Nothing Nothing
 table = newETable (Id &&& newEntry) (enumFrom A)
 
 
-instance EntryValExt AnEntry where setValue   (Value v) = updateEntry v
-                                   clearValue (Value v) = clearEntry  v
+--instance EntryValExt AnEntry where setValue   (Value v) = updateEntry v
+--                                   clearValue (Value v) = clearEntry  v
 
 res1 = applyRules facts table
 
