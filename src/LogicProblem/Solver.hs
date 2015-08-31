@@ -48,24 +48,19 @@ solveProblemInner' stop t rs acc =
                          | otherwise           -> tryPossible rrs
                 Right (rc, rcAcc)              -> (t', FallbackRequired rc, Left rcAcc : acc)
     where (t', res) = applyRules rs t
-          tryPossible rrs =
-            let count = possibleCount rrs
-                toApply = do (1, (rule, [RPossible rs])) <- count
-                             return $ RuleApplies rule $ RImplies rs []
-            in if not . null $ toApply
-                then let t'' = applyRules'' t' toApply
-                         res' = Left toApply
-                     in solveProblemInner' stop t'' rs (res':res:acc)
-               else if not . null $ count
-                then let nh = newHyp $ map (uncurry RuleMultiple . snd)
-                                           (sortWith fst count)
-                     in (t', nh, res:acc)
-               else (t', CanDoNothing, res:acc)
           possibleCount rrs = do (RuleUnmatched r rs) <- rrs
                                  let prs = filter isUndetermined rs
                                  return (length prs, (r, prs))
+          toApply rrs = do (1, (rule, [RPossible rs])) <- possibleCount rrs
+                           return $ RuleApplies rule $ RImplies rs []
+          newHyp rrs = NewHypotheses $ newHypotheses $ map (uncurry RuleMultiple . snd)
+                                                           (sortWith fst $ possibleCount rrs)
+          t'' = applyRules'' t' . toApply
+          tryPossible rrs | not . null $ toApply rrs       = solveProblemInner' stop (t'' rrs) rs (res:acc)
+          --(applyRules'' t' $ toApply rrs, , res:acc)
+                          | not . null $ possibleCount rrs = (t', newHyp rrs,   res:acc)
+                          | otherwise                      = (t', CanDoNothing, res:acc)
 
-newHyp = NewHypotheses . newHypotheses
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 

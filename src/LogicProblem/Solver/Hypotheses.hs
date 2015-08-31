@@ -38,17 +38,20 @@ mapHypAlt f (HypothesesAlt ha) = HypothesesAlt $ f ha
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
-newHypotheses rrs =
-    HypothesesLevel hQueue hFailed cRule chQueue ch chFailed
+newHypotheses rrs | not . null $ hAlts =
+                        HypothesesLevel hQueue hFailed cRule chQueue ch chFailed
+                  | otherwise = error "cannot create newHypotheses"
     where hQueue   = tail hAlts
           (cRule, HypothesesAlt cha) = head hAlts
-          ch       = head cha
+          ch       = if not . null $ cha then head cha
+                                         else error "CCC"
           chQueue  = HypothesesAlt $ tail cha
           hFailed  = []
           chFailed = HypothesesAlt []
           hAlts = do (RuleMultiple rule rs) <- rrs
                      let hyps = map (Hypothesis . getResultEntries) rs
-                     return (rule, HypothesesAlt hyps)
+                     if not . null $ hyps then return (rule, HypothesesAlt hyps)
+                                          else []
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
@@ -61,13 +64,14 @@ nextHypotheses (hl:hls) | not . null . lstHypAlt $ currentHypQ hl =
                                        } :hls
                         | not . null $ hypsInQueue hl =
                                 let (r, q) = head $ hypsInQueue hl
-                                in hl { currentHypF = HypothesesAlt []
+                                in if not . null $ lstHypAlt q then hl { currentHypF = HypothesesAlt []
                                        , currentHyp  = head $ lstHypAlt q
                                        , currentHypQ = mapHypAlt tail q
                                        , currentRule = r
                                        , hypsFailed  = (currentRule hl, failed) : hypsFailed hl
                                        , hypsInQueue = tail $ hypsInQueue hl
                                        } :hls
+                                       else error "AAA"
                         | otherwise = nextHypotheses hls -- TODO: drop the current hyp level
     where
           failed = mapHypAlt (currentHyp hl :) (currentHypF hl)

@@ -51,12 +51,15 @@ fallback t hls'@(hl:_) hist = if not . null $ nextHyps then (t'', nextHyps, [apH
           unHist  = SUnapply rule lastHyp unapplied
 
           nextHyps = nextHypotheses hls'
-          nextHyp  = head nextHyps
+          nextHyp  = if not . null $ nextHyps then head nextHyps
+                                              else error "BBB"
           ch@(Hypothesis vs) = currentHyp nextHyp
           cr      = currentRule nextHyp
           toApply = RuleApplies cr (RImplies vs [])
           t''     = applyRules'' t' [toApply]
           apHist  = SHypApply cr ch (currentHypQ nextHyp)
+
+fallback t [] hist = error "fail"
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 

@@ -18,6 +18,7 @@ module LogicProblem.Solver.Env (
 , newETable
 , getEntry
 , setEntry
+, listEntries
 
 ) where
 
@@ -79,6 +80,8 @@ getEntry id (ETable mp) = mp M.! id
 
 setEntry :: (Entry e) => e -> ETable e -> ETable e
 setEntry e (ETable mp) = ETable $ M.adjust (const e) (getId e) mp
+
+listEntries (ETable mp) = M.elems mp
 
 instance (Show e) => Show (ETable e) where
     show (ETable mp) = intercalate "\n" $ map show (M.elems mp)

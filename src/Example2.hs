@@ -10,8 +10,7 @@ import Data.List (intercalate)
 
 import Control.Arrow ((&&&))
 
-import Problem
-import Problem.Exec
+import LogicProblem
 
 {- Ships Puzzle
 
@@ -144,31 +143,25 @@ data AnEntry = AnEntry { position    :: Position
              deriving Show
 
 instance Entry AnEntry where getId (AnEntry i _ _ _ _ _) = Id i
-instance (Accessible v, EntryGet AnEntry v) => EntryAccessible AnEntry v where
-    updateEntry  = flip setV
-    clearEntry v = clearV (varDescriptor v)
 
-instance EntryGet AnEntry Position      where getV _   = Just . position
-                                              setV _   = const Nothing
-                                              clearV _ = const Nothing
-instance EntryGet AnEntry Country       where getV _     = country
-                                              setV e x   = Just $ e {country = Just x}
-                                              clearV _ e = Just $ e {country = Nothing}
-instance EntryGet AnEntry Leaves        where getV _     = leavesAt
-                                              setV e x   = Just $ e {leavesAt = Just x}
-                                              clearV _ e = Just $ e {leavesAt = Nothing}
-instance EntryGet AnEntry Destination   where getV _     = destination
-                                              setV e x   = Just $ e {destination = Just x}
-                                              clearV _ e = Just $ e {destination = Nothing}
-instance EntryGet AnEntry Cargo         where getV _     = cargo
-                                              setV e x   = Just $ e {cargo = Just x}
-                                              clearV _ e = Just $ e {cargo = Nothing}
-instance EntryGet AnEntry Color         where getV _     = color
-                                              setV e x   = Just $ e {color = Just x}
-                                              clearV _ e = Just $ e {color = Nothing}
-
-instance EntryValExt AnEntry where setValue   (Value v) = updateEntry v
-                                   clearValue (Value v) = clearEntry  v
+instance AccessibleEntry AnEntry Position      where getV _   = Just . position
+                                                     setV _   = const Nothing
+                                                     clearV _ = const Nothing
+instance AccessibleEntry AnEntry Country       where getV _     = country
+                                                     setV e x   = Just $ e {country = Just x}
+                                                     clearV _ e = Just $ e {country = Nothing}
+instance AccessibleEntry AnEntry Leaves        where getV _     = leavesAt
+                                                     setV e x   = Just $ e {leavesAt = Just x}
+                                                     clearV _ e = Just $ e {leavesAt = Nothing}
+instance AccessibleEntry AnEntry Destination   where getV _     = destination
+                                                     setV e x   = Just $ e {destination = Just x}
+                                                     clearV _ e = Just $ e {destination = Nothing}
+instance AccessibleEntry AnEntry Cargo         where getV _     = cargo
+                                                     setV e x   = Just $ e {cargo = Just x}
+                                                     clearV _ e = Just $ e {cargo = Nothing}
+instance AccessibleEntry AnEntry Color         where getV _     = color
+                                                     setV e x   = Just $ e {color = Just x}
+                                                     clearV _ e = Just $ e {color = Nothing}
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 

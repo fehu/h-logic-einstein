@@ -28,6 +28,7 @@ module LogicProblem.Solver.Apply (
 import qualified Data.Map as M
 
 import Data.Maybe (fromMaybe)
+import Data.List  (partition)
 
 import LogicProblem.Rule
 import LogicProblem.Solver.Def
@@ -92,11 +93,42 @@ setVs e (v:vs) = let mbE = setValue v e
                  in setVs (fromMaybe e mbE) vs
 setVs e [] = e
 
+
+--presentInTable t vs = all (notSet' vs) $ listEntries t
+--
+--notSet :: e -> Value e -> Bool
+--notSet e (Value v) = maybe True (/= v) $ getV (varDescriptor v) e
+--
+--notSet' vs e = all (notSet e) (concatMap snd vs)
+
+
+--partitionAlreadyPresent t vs = do e <- listEntries t
+--                                  partition (notSet e) vs
+--
+--notSet :: e -> Value e -> Bool
+--notSet e (Value v) = maybe True (/= v) $ getV (varDescriptor v) e
+
+partitionAlreadyPresent t = partition (isAnySet t)
+
+isAnySet t (_, vs) = any (isSet' t) vs
+
+isSet :: Value e -> e -> Bool
+isSet (Value v) e = modifiable v
+                 && maybe False (== v) (getV (varDescriptor v) e)
+isSet' t v  = any (isSet v) $ listEntries t
+
 updREntry t = updT (`getEntry` t) t
 
+
 applyARule r t =
-    case executeRule r t of res@(RuleApplies _ (RImplies x _)) -> (updREntry t x, res)
-                            res                                -> (t, res)
+    case executeRule r t of res@(RuleApplies _ (RImplies x _))
+                                | isPresentInTable t x-> (t, RuleUnmatched r $ results t x)
+                                | otherwise          -> (updREntry t x, res)
+                            res                      -> (t, res)
+    where presentInTable = partitionAlreadyPresent
+          isPresentInTable t vs = not . null . fst $ presentInTable t vs
+          results t vs = let (alreadySet, unSet) = presentInTable t vs
+                         in [RBroken alreadySet, RPossible unSet]
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
@@ -123,7 +155,7 @@ applyRules' [] t acc = (t, acc)
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
-applyRules'' t (RuleApplies _ (RImplies r _) : rs) = applyRules'' (updREntry t r) rs
+applyRules'' t (RuleApplies _ (RImplies x _) : rs) = applyRules'' (updREntry t x) rs
 applyRules'' t  [] = t
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
