@@ -98,6 +98,10 @@ setVs e (v:vs) = let mbE = setValue v e
                  in setVs (fromMaybe e mbE) vs
 setVs e [] = e
 
+
+
+
+
 partitionAlreadyPresent t = partition (isAnySet t)
 
 isAnySet t (_, vs) = any (isSet' t) vs
@@ -106,6 +110,9 @@ isSet :: Value e -> e -> Bool
 isSet (Value v) e = modifiable v
                  && maybe False (== v) (getV (varDescriptor v) e)
 isSet' t v  = any (isSet v) $ listEntries t
+
+
+
 
 updREntry t = updT (`getEntry` t) t
 

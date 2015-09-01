@@ -64,7 +64,8 @@ nextHypotheses (hl:hls) | not . null . lstHypAlt $ currentHypQ hl =
                                        } :hls
                         | not . null $ hypsInQueue hl =
                                 let (r, q) = head $ hypsInQueue hl
-                                in if not . null $ lstHypAlt q then hl { currentHypF = HypothesesAlt []
+                                in if not . null $ lstHypAlt q then hl {
+                                         currentHypF = HypothesesAlt []
                                        , currentHyp  = head $ lstHypAlt q
                                        , currentHypQ = mapHypAlt tail q
                                        , currentRule = r

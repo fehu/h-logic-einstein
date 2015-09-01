@@ -71,12 +71,12 @@ facts :: KnownFacts AnEntry
 facts = [
    "1a" -:      Greek <==> At 6                      |:: "The Greek ship leaves at six ..."
  , "1b" -:      Greek <==> Coffee                    |:: "... and carries coffee."
--- , "1c" -:       At 6 <==> Coffee
+ , "1c" -:       At 6 <==> Coffee
  , "2"  -: Position 3 <==> Black                     |:: "The Ship in the middle has a black chimney."
  , "3"  -:    English <==> At 9                      |:: "The English ship leaves at nine."
  , "4a" -:     French <==> Blue                      |:: "The French ship with blue chimney..."
  , "4b" -:     French <==> Coffee    <?| toTheRight  |:: "... is to the left of a ship that carries coffee."
--- , "4c" -:       Blue <==> Coffee    <?| toTheRight
+ , "4c" -:       Blue <==> Coffee    <?| toTheRight
  -- TODO:                            |?> toTheLeft
  , "5"  -:      Cocoa <==> Marseille <?| toTheRight  |:: "To the right of the ship carrying cocoa" ++
                                                          " is a ship going to Marseille."
@@ -85,7 +85,7 @@ facts = [
  , "8"  -:      Genoa <==> At 5                      |:: "A ship going to Genoa leaves at five."
  , "9a" -:    Spanish <==> At 7                      |:: "The Spanish ship leaves at seven ..."
  , "9b" -:    Spanish <==> Marseille |?> toTheRight  |:: "... and is to the right of the ship going to Marseille."
--- , "9c" -:       At 7 <==> Marseille |?> toTheRight
+ , "9c" -:       At 7 <==> Marseille |?> toTheRight
  , "10" -:        Red <==> Hamburg                   |:: "The ship with a red chimney goes to Hamburg."
  , "11" -:       At 7 <==> White     |?> nextTo      |:: "Next to the ship leaving at seven is a ship with a white chimney."
  , "12" -:       Corn  !?  onTheBorder               |:: "The ship on the border carries corn."
@@ -94,7 +94,8 @@ facts = [
  , "15" -:    Hamburg <==> At 6                      |:: "The ship to Hamburg leaves at six."
  ]
 
-Just x `toTheRight` Just y = (x :: Position) > y --x /= y && (maxBound :: Position) /= y && succ y == x
+Just x `toTheRight` Just y = x /= y && (maxBound :: Position) /= y && succ y == x
+-- (x :: Position) > y
 
 Just x `nextTo` Just y  = x /= y &&
     ( (maxBound :: Position) /= x && succ x == y || minBound /= x && pred x == y )
@@ -173,7 +174,7 @@ ctx :: ExecContext Rule AnEntry
 ctx = newExecContext table
 
 
-res = solveProblem ctx facts (Just 100)
+res = solveProblem ctx facts Nothing  --(Just 100)
 
 main :: IO()
 main = do putStrLn "facts:"

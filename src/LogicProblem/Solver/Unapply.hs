@@ -39,12 +39,15 @@ unapply' t (RuleApplies r i@(RImplies ws _) : rs) iacc =
           f t [] = t
           g = foldl (\e' v -> fromMaybe e' (clearValue v e'))
 
+--unapply' t (RuleApplies _ x : _) iacc = error $ "TTT " ++ show x
+unapply' t (_:rs) iacc = unapply' t rs iacc
 unapply' t [] iacc = (t, iacc)
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
-fallback t hls'@(hl:_) hist = if not . null $ nextHyps then (t'', nextHyps, [apHist, unHist])
-                                                       else (t', [], [])
+fallback t hls'@(hl:_) hist = (t'', nextHyps, [apHist, unHist])
+--if not . null $ nextHyps then (t'', nextHyps, [apHist, unHist])
+--                                                       else (t', [], [])
     where lastHyp = currentHyp hl
           rule    = currentRule hl
           (t', unapplied) = unapply t rule hist []
@@ -59,7 +62,7 @@ fallback t hls'@(hl:_) hist = if not . null $ nextHyps then (t'', nextHyps, [apH
           t''     = applyRules'' t' [toApply]
           apHist  = SHypApply cr ch (currentHypQ nextHyp)
 
-fallback t [] hist = error "fail"
+fallback t [] hist = (t, [], [])
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 

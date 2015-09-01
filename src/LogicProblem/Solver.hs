@@ -28,9 +28,9 @@ solveProblemInner :: (SolveContext context e rule, RuleDefinition rule e) =>
 -- various possibilities => RuleMultiple SPossible
 
 solveProblemInner c rs | not $ null contradict                  = (FallbackRequired contradict     , res)
+--                       | not (null canImply) && null imply      = (FallbackRequired imply, res)
                        | not (null imply) || not (null toApply) = (RulesApplied  $ imply ++ toApply, res)
                        | not (null thePossible)                 = (NewHypotheses $ newHypotheses thePossible, res)
-                       | not (null canImply) && null imply      = (FallbackRequired imply, res)
                        | otherwise                              = (CanDoNothing, res)
     where res = executeRules rs t
           t   = contextTable c
@@ -67,10 +67,12 @@ solveProblem c rs mbStop = solveProblem' c rs mbStop []
 solveProblem' c rs mbStop acc =
     case res of _ | stop acc            -> (c, SolveFailure Stopped, acc)
                 FallbackRequired reason -> let (t', hyps', hist) = fallback t hyps acc
-                                           in solveProblem' (solveContext t' hyps') rs mbStop (hist ++ acc)
+                                           in if null hyps'
+                                              then (c, SolveFailure res, resHE : acc)
+                                              else solveProblem' (solveContext t' hyps') rs mbStop (hist ++ acc)
                 NewHypotheses hl        -> let Hypothesis hs = currentHyp hl
                                                t'  = updREntry t hs
-                                               c'  = updContextTable c t'
+                                               c'  = solveContext t' (hl : contextHypotheses c)
                                                hh  = SHypApply (currentRule hl) (currentHyp hl) (currentHypQ hl)
                                            in solveProblem' c' rs mbStop (hh : acc)
                 RulesApplied rrs        -> let t' = applyRules'' t rrs
