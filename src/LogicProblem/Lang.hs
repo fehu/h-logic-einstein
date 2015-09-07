@@ -1,7 +1,3 @@
-{-# LANGUAGE MultiParamTypeClasses
-            , FlexibleInstances
-          #-}
-
 module LogicProblem.Lang (
 
   KnownFacts

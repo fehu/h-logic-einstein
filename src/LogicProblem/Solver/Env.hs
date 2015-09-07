@@ -1,7 +1,3 @@
-{-# LANGUAGE MultiParamTypeClasses
-           , ExistentialQuantification
-         #-}
-
 module LogicProblem.Solver.Env (
 
   Accessible(..)

@@ -1,8 +1,3 @@
-{-# LANGUAGE MultiParamTypeClasses
-           , ExistentialQuantification
-         #-}
-
-
 module LogicProblem.Rule (
 
   RuleDefinition(..)

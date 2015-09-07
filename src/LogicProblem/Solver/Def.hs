@@ -1,4 +1,3 @@
-
 module LogicProblem.Solver.Def (
 
   RApply(..)

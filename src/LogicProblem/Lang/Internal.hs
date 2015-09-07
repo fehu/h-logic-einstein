@@ -1,8 +1,3 @@
-{-# LANGUAGE MultiParamTypeClasses
-           , ExistentialQuantification
-           , FlexibleInstances
-         #-}
-
 module LogicProblem.Lang.Internal (
 
 ) where

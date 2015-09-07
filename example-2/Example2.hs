@@ -1,5 +1,3 @@
-{-# LANGUAGE MultiParamTypeClasses #-}
-
 module Example2 ( main ) where
 
 import Data.List (intercalate)
@@ -63,7 +61,7 @@ data Leaves = At Int deriving (Show, Eq) -- At5 | At6 | At7 | At8 | At9
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 facts :: KnownFacts AnEntry
-facts = [
+facts = rules [
    "1a" -:      Greek <==> At 6                      |:: "The Greek ship leaves at six ..."
  , "1b" -:      Greek <==> Coffee                    |:: "... and carries coffee."
  , "1c" -:       At 6 <==> Coffee
@@ -153,7 +151,7 @@ newEntry pos = AnEntry pos Nothing Nothing Nothing Nothing Nothing
 
 table = newETable (Id &&& newEntry) (enumFromTo minBound maxBound)
 
-ctx :: ExecContext Rule AnEntry
+ctx :: ExecContext AtomicRule AnEntry
 ctx = newExecContext table
 
 

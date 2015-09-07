@@ -1,11 +1,4 @@
-{-# LANGUAGE MultiParamTypeClasses
-           , ExistentialQuantification
-           , AllowAmbiguousTypes
---           , FunctionalDependencies
---           , TypeFamilies
---           , IncoherentInstances
---           , OverlappingInstances
-        #-}
+{-# LANGUAGE TypeFamilies, UndecidableInstances #-}
 
 module LogicProblem.Lang.Impl (
 

@@ -1,7 +1,4 @@
-{-# LANGUAGE MultiParamTypeClasses
-           , FlexibleInstances
-           , UndecidableInstances
-         #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 module LogicProblem.Solver.Apply (
 

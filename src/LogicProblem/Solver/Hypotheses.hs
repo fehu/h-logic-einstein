@@ -1,4 +1,3 @@
-
 module LogicProblem.Solver.Hypotheses (
 
   Hypothesis(..)

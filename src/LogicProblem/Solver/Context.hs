@@ -1,8 +1,3 @@
-{-# LANGUAGE MultiParamTypeClasses
-           , FlexibleInstances
-         #-}
-
-
 module LogicProblem.Solver.Context (
 
   ContextTable(..)
