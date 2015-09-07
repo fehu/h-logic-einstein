@@ -9,12 +9,6 @@ module LogicProblem.Lang (
 , rules
 , AtomicRule(..)
 
-, (|?>)
-, (<?|)
-
-, (-:)
-, (|::)
-
 , RuleKnown(..)
 , RuleKnownConstraint(..)
 , RuleCondition1(..)
@@ -25,23 +19,6 @@ module LogicProblem.Lang (
 ) where
 
 import LogicProblem.Rule
-
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-
-k |?> f  = RuleKnownCond1 k (RuleCondition1 f) False
-k <?| f  = RuleKnownCond1 k (RuleCondition1 f) True
-
-name -: expr = Rule name Nothing (expr undefined)
-rule |:: descr = rule { ruleDescription = Just descr }
-
-infix 3 -:
-infix 2 |::
-
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-
-
-
-
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
