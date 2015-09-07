@@ -1,10 +1,8 @@
-{-# LANGUAGE MultiParamTypeClasses, ExistentialQuantification
-        , TypeFamilies
-        , AllowAmbiguousTypes
-        , IncoherentInstances
- #-} -- , AllowAmbiguousTypes
-
--- FlexibleInstances, UndecidableInstances,
+{-# LANGUAGE MultiParamTypeClasses
+           , ExistentialQuantification
+           , TypeFamilies
+           , IncoherentInstances
+        #-}
 
 module LogicProblem.Lang.Impl (
 
@@ -53,10 +51,6 @@ instance (AccessibleEntry e v)
 
 data RuleAnd e = RuleAnd [RuleAtom e]
 
---instance RuleAtoms e (e -> RuleAnd e) where
---    getRuleAtoms f e = let (RuleAnd as) = f e
---                     in as
-
 (&) :: (RuleAtoms e as , RuleAtoms e bs) =>
     as -> bs -> e -> RuleAnd e
 
@@ -68,13 +62,6 @@ data RuleAnd e = RuleAnd [RuleAtom e]
 instance RuleAtoms' e (e -> RuleAnd e) FAnd where
     getRuleAtoms' _ f e = let (RuleAnd as) = f e
                         in as
-
---(&) :: (RuleAtoms' e as FAnd, RuleAtoms' e bs FAnd) =>
---    as -> bs -> e -> RuleAnd e
---
---(&) as bs e = RuleAnd $ getA ++ getB
---    where getA = getRuleAtoms' FAnd as e
---          getB = getRuleAtoms' FAnd bs e
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
