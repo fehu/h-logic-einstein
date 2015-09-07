@@ -1,8 +1,4 @@
-{-# LANGUAGE MultiParamTypeClasses
-           , FlexibleInstances
-           , FlexibleContexts
-           , UndecidableInstances
-         #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Example2 ( main ) where
 
@@ -53,7 +49,6 @@ instance Enum Position where toEnum i | i >= min && i <= max = Position i
                                       (Position max) = maxBound
                              fromEnum (Position i) = i
 
---data
 
 data Country = Greek | English | French | Brazilian | Spanish deriving (Show, Eq)
 
@@ -95,23 +90,11 @@ facts = [
  ]
 
 Just x `toTheRight` Just y = x /= y && (maxBound :: Position) /= y && succ y == x
--- (x :: Position) > y
 
 Just x `nextTo` Just y  = x /= y &&
     ( (maxBound :: Position) /= x && succ x == y || minBound /= x && pred x == y )
 
 onTheBorder (Just pos) = pos == (maxBound :: Position) || pos == minBound
-
-
--- TODO !!!!!!!!!!!!!!!!
--- | RuleMultiple 1b
---                SConfirm [(Position 1,[Greek]),(Position 1,[Coffee])]
---                SImplies {what = [(Position 3,[Greek])], reason = [(Position 3,[]),(Position 3,[Coffee])]}
-
-
--- TODO
--- | RuleApplies 4b
---               SImplies {what = [(Position 2,[French]),(Position 3,[Coffee])], reason = []}
 
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --

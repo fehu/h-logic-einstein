@@ -14,7 +14,6 @@ module LogicProblem.Solver.Def (
 
 ) where
 
---import LogicProblem.Rule
 import LogicProblem.Solver.Env
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
@@ -26,6 +25,8 @@ data RApply e = RApply1 (ApplyRule1 e)
               | RApply2 (e -> ApplyRule1 e)
 
 
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+
 type REntry v = (Id, [v])
 
 data RApplyResult v = RImplies  { what   :: [REntry v]
@@ -36,7 +37,6 @@ data RApplyResult v = RImplies  { what   :: [REntry v]
                     | RPossible [REntry v]
                     deriving Show
 
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 isSuccess        :: RApplyResult v -> Bool
 isFailure        :: RApplyResult v -> Bool

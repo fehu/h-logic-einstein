@@ -10,7 +10,6 @@ module LogicProblem.Rule (
 , RuleExpression(..)
 
 , RuleInner(..)
---, RuleApplication(..)
 
 ) where
 

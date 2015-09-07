@@ -1,8 +1,4 @@
-{-# LANGUAGE MultiParamTypeClasses
-           , FlexibleInstances
-           , FlexibleContexts
-           , UndecidableInstances
-         #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 
 module Example1 (
   main
@@ -70,10 +66,6 @@ instance AccessibleEntry AnEntry Musica  where getV _ = musica
                                                setV e a = Just $ e {musica = Just a}
                                                clearV _ e = Just $ e {color = Nothing}
 
---instance (Accessible v, AccessibleEntry AnEntry v) => EntryAccessible AnEntry v
---    where updateEntry  = flip setV
---          clearEntry v = clearV (varDescriptor v)
-
 
 instance Accessible ID     where modifiable _    = False
                                  varDescriptor _ = AccessibleDescriptor "ID"
@@ -133,12 +125,6 @@ newEntry i = AnEntry i Nothing Nothing Nothing Nothing Nothing
 
 table = newETable (Id &&& newEntry) (enumFrom A)
 
-
---instance EntryValExt AnEntry where setValue   (Value v) = updateEntry v
---                                   clearValue (Value v) = clearEntry  v
-
---res1 = applyRules facts table
-
 ctx :: ExecContext Rule AnEntry
 ctx = newExecContext table
 
@@ -147,15 +133,6 @@ res2 = solveProblem ctx facts (Just 100)
 main :: IO()
 main = do putStrLn "facts:"
           putStrLn $ intercalate "\n" (map show facts)
---          putStrLn "\n-- table: "
---          print table
-
---          putStrLn "== apply rules =="
---          putStrLn "-- history: "
---          putStrLn . showHistory . snd $ res1
---          putStrLn "-- table: "
---          print $ fst res1
-
           putStrLn "== run solveProblem =="
           let (c', r', a') = res2
           putStrLn "-- history:"

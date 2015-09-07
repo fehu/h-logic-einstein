@@ -6,9 +6,6 @@ module LogicProblem.Solver.Hypotheses (
 , Hypotheses
 , HypothesesLevel(..)
 
---, lstHypAlt
---, mapHypAlt
-
 , newHypotheses
 , nextHypotheses
 

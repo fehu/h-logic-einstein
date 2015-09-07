@@ -1,7 +1,5 @@
 {-# LANGUAGE MultiParamTypeClasses
             , FlexibleInstances
---            , FlexibleContexts
---            , UndecidableInstances
           #-}
 
 module LogicProblem.Lang (

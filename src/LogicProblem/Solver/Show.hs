@@ -34,8 +34,6 @@ showHistoryInner res = do r <- res
                           let rS = concatMap (("\n\t\t" ++) . show) (ruleResults r)
                           " | " ++ showRuleResult r ++ rS ++ "\n\n"
 
---showHistoryInner (Right failure) = "!! " ++ show failure
-
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 showHypothesis indent (Hypothesis hs) = intercalate "\n" $ map f hs

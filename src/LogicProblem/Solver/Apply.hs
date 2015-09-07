@@ -7,13 +7,7 @@ module LogicProblem.Solver.Apply (
 
   executeRule
 , executeRules
---, applyARule
---, applyRules
 , applyRules''
-
---, ApplyRsEither
---, ApplyRsSuccess
---, ApplyRsFailure
 
 , partitionAlreadyPresent
 
@@ -99,8 +93,7 @@ setVs e (v:vs) = let mbE = setValue v e
 setVs e [] = e
 
 
-
-
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 partitionAlreadyPresent t = partition (isAnySet t)
 
@@ -112,43 +105,12 @@ isSet (Value v) e = modifiable v
 isSet' t v  = any (isSet v) $ listEntries t
 
 
-
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 updREntry t = updT (`getEntry` t) t
-
-
---applyARule r t =
---    case executeRule r t of res@(RuleApplies _ (RImplies x _))
---                                | isPresentInTable t x-> (t, RuleUnmatched r $ results t x)
---                                | otherwise          -> (updREntry t x, res)
---                            res                      -> (t, res)
---    where presentInTable = partitionAlreadyPresent
---          isPresentInTable t vs = not . null . fst $ presentInTable t vs
---          results t vs = let (alreadySet, unSet) = presentInTable t vs
---                         in [RBroken alreadySet, RPossible unSet]
-
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-
---type ApplyRsSuccess r e = [RuleResult r e]
---type ApplyRsFailure r e = (RuleResult r e, [RuleResult r e])
---
---type ApplyRsEither r e = Either (ApplyRsSuccess r e) (ApplyRsFailure r e)
-
-
---applyRules :: (RuleDefinition r e, EntryValExt e) =>
---                        [r e] -> ETable e -> (ETable e, ApplyRsEither (r e) e)
---applyRules rs t = res
---    where res = applyRules' rs t (Left [])
---
---applyRules' (r:rs) t (Left acc) = let (t', res) = applyARule r t
---                         in if ruleContradicts res
---                            then (t, Right (res, acc))
---                            else applyRules' rs t' (Left (res:acc))
---applyRules' [] t acc = (t, acc)
-
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 applyRules'' t (RuleApplies _ (RImplies x _) : rs) = applyRules'' (updREntry t x) rs
 applyRules'' t  [] = t
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+
