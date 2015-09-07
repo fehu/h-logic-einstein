@@ -15,12 +15,12 @@ module LogicProblem.Lang (
 , (-:)
 , (|::)
 
-, RuleStatement(..)
 , RuleKnown(..)
+, RuleKnownConstraint(..)
 , RuleCondition1(..)
-, RuleCondition2(..)
+--, RuleCondition2(..)
 , RuleKnownCond1(..)
-, RuleKnownCond2(..)
+--, RuleKnownCond2(..)
 
 ) where
 
@@ -28,18 +28,34 @@ import LogicProblem.Rule
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
-data RuleStatement v = RuleAtomic v
-                    | RuleConstraint (Maybe v -> Bool)
-                    | RuleAnd [RuleStatement v]
-                    | RuleOr  [RuleStatement v]
+(<==>) = RuleKnown
+(!?)   = RuleKnownConstraint
 
-data RuleKnown a b = RuleKnown (RuleStatement a) (RuleStatement b)
+k |?> f  = RuleKnownCond1 k (RuleCondition1 f) False
+k <?| f  = RuleKnownCond1 k (RuleCondition1 f) True
+
+name -: expr = Rule name Nothing (boxExpression expr)
+rule |:: descr = rule { ruleDescription = Just descr }
+
+infix 3 -:
+infix 2 |::
+
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+
+
+
+
+
+-- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
+
+data RuleKnown a b = RuleKnown a b
+data RuleKnownConstraint a v = RuleKnownConstraint a (Maybe v -> Bool)
 
 data RuleCondition1 v     = RuleCondition1 (Maybe v -> Maybe v -> Bool)
-data RuleCondition2 v1 v2 = RuleCondition2 ((v1,v2) -> (v1,v2) -> Bool) -- TODO
+--data RuleCondition2 v1 v2 = RuleCondition2 ((v1,v2) -> (v1,v2) -> Bool) -- TODO
 
 data RuleKnownCond1 a b v     = RuleKnownCond1 (RuleKnown a b) (RuleCondition1 v) Bool
-data RuleKnownCond2 a b v1 v2 = RuleKnownCond2 (RuleKnown a b) (RuleCondition2 v1 v2)
+--data RuleKnownCond2 a b v1 v2 = RuleKnownCond2 (RuleKnown a b) (RuleCondition2 v1 v2)
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
@@ -59,20 +75,6 @@ instance RuleDefinition Rule e where
 
 
 type KnownFacts e = [Rule e]
-
--- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
-
-x <==> y = RuleKnown (RuleAtomic x) (RuleAtomic y)
-x !? c   = RuleKnown (RuleAtomic x) (RuleConstraint c)
-
-k |?> f  = RuleKnownCond1 k (RuleCondition1 f) False
-k <?| f  = RuleKnownCond1 k (RuleCondition1 f) True
-
-name -: expr = Rule name Nothing (boxExpression expr)
-rule |:: descr = rule { ruleDescription = Just descr }
-
-infix 3 -:
-infix 2 |::
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 

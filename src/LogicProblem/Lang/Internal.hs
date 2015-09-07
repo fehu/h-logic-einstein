@@ -134,6 +134,7 @@ instance ( Accessible a, AccessibleEntry e a
 instance (Accessible v, AccessibleEntry e v, Entry e) => RuleExpression (RuleCondition1 v) e where
     boxExpression = RuleC . dsl2CCond1
 
+
 instance ( AccessibleEntry e a
          , AccessibleEntry e b
          , AccessibleEntry e v
@@ -145,10 +146,17 @@ instance ( AccessibleEntry e a
             where k = dsl2CKnown known
                   c = dsl2CCond1 cond
 
-dsl2CKnown (RuleKnown (RuleAtomic a) (RuleAtomic b)) = KnownAtomsContainer a b
+dsl2CKnown (RuleKnown a b) = KnownAtomsContainer a b
 
-dsl2CKnown (RuleKnown s1@(RuleAtomic a) s2@(RuleConstraint f)) =
-    KnownConstraintContainer a f vd where vd = varDescriptor (undefined :: v)
+
+
+instance ( Accessible a, AccessibleEntry e a
+         , Accessible v, AccessibleEntry e v
+         , Entry e) =>
+    RuleExpression (RuleKnownConstraint a v) e
+    where
+        boxExpression (RuleKnownConstraint a f) = RuleC $
+            KnownConstraintContainer a f vd where vd = varDescriptor (undefined :: v)
 
 cCond1 vd f = CondContainer1 f vd
 
