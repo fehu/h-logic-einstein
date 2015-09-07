@@ -15,6 +15,7 @@ module LogicProblem (
 , Rule(..)
 , KnownFacts
 
+, (&)
 , (<==>)
 , (|?>)
 , (<?|)

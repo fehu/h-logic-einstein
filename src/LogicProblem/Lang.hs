@@ -28,9 +28,6 @@ import LogicProblem.Rule
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
---(<==>) = RuleKnown
---(!?)   = RuleKnownConstraint
-
 k |?> f  = RuleKnownCond1 k (RuleCondition1 f) False
 k <?| f  = RuleKnownCond1 k (RuleCondition1 f) True
 
@@ -87,7 +84,7 @@ rules = concatMap f
     where f (Rule nme _ [r]) = [AtomicRule nme Nothing r]
           f r@(Rule _ _ [])  = error $ "Rule not defined: " ++ show r
           f (Rule nme _ rs)  = do (r, i) <- zip rs ['a'..]
-                                  [ AtomicRule nme (Just i) r ]
+                                  return $ AtomicRule nme (Just i) r
 
 type KnownFacts e = [AtomicRule e]
 

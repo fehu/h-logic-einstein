@@ -9,6 +9,8 @@ import Control.Arrow ((&&&))
 
 import LogicProblem
 
+import LogicProblem.Lang.Impl
+
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 data ID = A | B | C | D | E
@@ -86,6 +88,7 @@ instance Accessible Musica where modifiable _    = True
 facts :: KnownFacts AnEntry
 facts = rules [ "№2"  -:   Ingles <==> Roja                  |:: "El inglés vive en la casa roja."
         , "№3"  -:  Espanol <==> Perro                 |:: "El español es el proprietario del perro."
+--        , "t" -: ((Espanol & Verde) :: AnEntry -> RuleAnd AnEntry) <==> Perro
         , "№4"  -:    Verde <==> Cafe                  |:: "En la casa verde se bebe café."
         , "№5"  -:     Ruso <==> Te                    |:: "El ruso bebe té."
 --        , "№6"  -:    Verde <==> Marfil |?> aDerechaDe |:: "La casa verde está junto y a la derecha de la casa de marfil."
