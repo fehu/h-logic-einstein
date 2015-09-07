@@ -105,7 +105,7 @@ showHistory [] = ""
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 instance (Show (r e), RuleDefinition r e) => Show (SolveResult r e) where
-    show (SolveSuccess rs) = " * ** Success ** *\n" ++ show rs
+    show (SolveFinish  rs) = " * ** Finished ** *\n" ++ show rs
     show (SolveFailure rs) = " * ** Failure ** *\n" ++ show rs
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --

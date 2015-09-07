@@ -26,10 +26,10 @@ solveProblemInner :: (SolveContext context e rule, RuleDefinition rule e) =>
 -- single possibility    => RuleApplies  SImplies
 -- various possibilities => RuleMultiple SPossible
 
-solveProblemInner c rs | not $ null contradict                  = (FallbackRequired contradict     , res)
+solveProblemInner c rs | not $ null contradict                  = (FallbackRequired contradict, res)
                        | not (null canImply) && null imply      = (FallbackRequired imply, res)
                        | not (null imply) || not (null toApply) = (RulesApplied  $ imply ++ toApply, res)
-                       | not (null thePossible)                 = (NewHypotheses $ newHypotheses thePossible, res)
+                       | not (null thePossible)                 = (NewHypotheses $ newHypotheses thePossible,res)
                        | otherwise                              = (CanDoNothing, res)
     where res = executeRules rs t
           t   = contextTable c
@@ -69,6 +69,7 @@ solveProblem' c rs mbStop acc =
                                            in solveProblem' c' rs mbStop (hh : acc)
                 RulesApplied rrs        -> let t' = applyRules'' t rrs
                                            in solveProblem' (updContextTable c t') rs mbStop (resHE : acc)
+                CanDoNothing            -> (c, SolveFinish CanDoNothing, resHE : acc)
                 _                       -> (c, SolveFailure res, resHE : acc)
     where stop acc = maybe False (length acc ==) mbStop
           (res, resH)  = solveProblemInner c rs

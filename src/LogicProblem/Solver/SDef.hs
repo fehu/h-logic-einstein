@@ -4,7 +4,7 @@ module LogicProblem.Solver.SDef (
 , SolveInnerResult(..)
 
 , solveResult
-, isSolved
+, hasFinished
 
 
 ) where
@@ -22,14 +22,14 @@ data SolveInnerResult r e = NewHypotheses    (HypothesesLevel r e)
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
-data SolveResult r e = SolveSuccess (SolveInnerResult r e)
+data SolveResult r e = SolveFinish  (SolveInnerResult r e)
                      | SolveFailure (SolveInnerResult r e)
 
-solveResult (SolveSuccess res) = res
+solveResult (SolveFinish res) = res
 solveResult (SolveFailure res) = res
 
-isSolved (SolveSuccess _) = True
-isSolved _ = False
+hasFinished (SolveFinish _) = True
+hasFinished  _ = False
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
