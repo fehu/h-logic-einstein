@@ -10,13 +10,15 @@ module LogicProblem (
 , Entry(..)
 , AccessibleEntry(..)
 
+, rules
+, AtomicRule(..)
 , Rule(..)
 , KnownFacts
 
 , (<==>)
 , (|?>)
 , (<?|)
-, (!?)
+--, (!?)
 
 , (-:)
 , (|::)
@@ -36,6 +38,7 @@ module LogicProblem (
 
 import LogicProblem.Lang
 import LogicProblem.Lang.Internal
+import LogicProblem.Lang.Impl
 import LogicProblem.Solver
 import LogicProblem.Solver.Env
 import LogicProblem.Solver.Context

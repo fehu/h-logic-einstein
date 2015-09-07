@@ -6,11 +6,11 @@ module LogicProblem.Lang (
 
   KnownFacts
 , Rule(..)
+, rules
+, AtomicRule(..)
 
-, (<==>)
 , (|?>)
 , (<?|)
-, (!?)
 
 , (-:)
 , (|::)
@@ -28,13 +28,13 @@ import LogicProblem.Rule
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
-(<==>) = RuleKnown
-(!?)   = RuleKnownConstraint
+--(<==>) = RuleKnown
+--(!?)   = RuleKnownConstraint
 
 k |?> f  = RuleKnownCond1 k (RuleCondition1 f) False
 k <?| f  = RuleKnownCond1 k (RuleCondition1 f) True
 
-name -: expr = Rule name Nothing (boxExpression expr)
+name -: expr = Rule name Nothing (expr undefined)
 rule |:: descr = rule { ruleDescription = Just descr }
 
 infix 3 -:
@@ -61,7 +61,7 @@ data RuleKnownCond1 a b v     = RuleKnownCond1 (RuleKnown a b) (RuleCondition1 v
 
 data Rule e = Rule { ruleName'       :: String
                    , ruleDescription :: Maybe String
-                   , ruleDef         :: RuleContainer e
+                   , ruleDefs        :: [RuleContainer e]
                    }
                    deriving Show
 
@@ -69,12 +69,27 @@ instance Eq (Rule e) where r1 == r2 = ruleName' r1 == ruleName' r2
 
 --instance Show (Rule e) where show = show . ruleName'
 
-instance RuleDefinition Rule e where
-    getRule Rule{ruleDef = (RuleC c)} = getRule' c
-    ruleName = ruleName'
+data AtomicRule e = AtomicRule { aRuleName' :: String
+                               , aRuleSub   :: Maybe Char
+                               , ruleDef    :: RuleContainer e
+                               }
+                   deriving Show
 
+instance Eq (AtomicRule e) where r1 == r2 = aRuleName' r1 == aRuleName' r2
+                                           && aRuleSub r1 == aRuleSub r2
 
-type KnownFacts e = [Rule e]
+instance RuleDefinition AtomicRule e where
+    getRule AtomicRule{ruleDef = (RuleC c)} = getRule' c
+    ruleName (AtomicRule nme sub _)= nme ++ maybe [] (("." ++) . show) sub
+
+rules :: [Rule e] -> [AtomicRule e]
+rules = concatMap f
+    where f (Rule nme _ [r]) = [AtomicRule nme Nothing r]
+          f r@(Rule _ _ [])  = error $ "Rule not defined: " ++ show r
+          f (Rule nme _ rs)  = do (r, i) <- zip rs ['a'..]
+                                  [ AtomicRule nme (Just i) r ]
+
+type KnownFacts e = [AtomicRule e]
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
