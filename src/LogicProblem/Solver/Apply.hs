@@ -43,11 +43,11 @@ applyR (RApply2 f) (ETable mp) = do (i1, e1) <- ies
 
 executeRule r t = apply
     where res = applyR (getRule r) t
-          broken = filter isFailure res
-          imply  = filter isSuccess res
+          broken   = filter isFailure res
+          success  = filter isSuccess res
           apply | length broken == length res = RuleContradicts r broken
-                | length imply == 1           = RuleApplies     r (head imply)
-                | not . null $ imply          = RuleMultiple    r imply
+                | length success == 1         = RuleApplies     r (head success)
+                | not . null $ success        = RuleMultiple    r success
                 | otherwise                   = RuleUnmatched   r res
 
 executeRules rs t = map (`executeRule` t) rs

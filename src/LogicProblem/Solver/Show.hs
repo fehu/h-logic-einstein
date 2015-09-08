@@ -50,6 +50,7 @@ showHypotheses indent hhs = intercalate ("\n" ++ indent) hStrs
     where hStrs = concatMap (\(r, hs) -> ["| " ++ show r, hAltStr hs]) hhs
           hAltStr = showHypothesesAlt (indent ++ "\t")
 
+
 instance (Show (r e)) => Show (HypothesesLevel r e) where
     show hl = "* HypothesesLevel:"      ++
               "\n  - current rule: "    ++ show (currentRule  hl) ++
@@ -71,8 +72,8 @@ instance (Show (r e), RuleDefinition r e) => Show (SolveInnerResult r e) where
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 
 instance (Show (r e), Show e) => Show (ExecContext r e) where
-    show (ExecContext (t, hs)) = "Table:\n" ++ show t ++ "\n\n" ++
-                                 "Hypotheses:\n" ++ intercalate "\n" (map show hs) ++ "\n"
+    show (ExecContext (t, hs)) = "Hypotheses:\n" ++ intercalate "\n" (map show hs) ++ "\n"
+                              ++ "Table:\n" ++ show t ++ "\n\n"
 
 -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- -- --
 

@@ -41,6 +41,7 @@ solveProblemInner c rs | not $ null contradict                  = (FallbackRequi
           notPresent (RuleApplies _ (RImplies xs _)) = null . fst  $ partitionAlreadyPresent t xs
           notPresent _                               = False
 
+    -- TODO: include RuleMultiple
           possibleCount = do (RuleUnmatched r rs) <- res
                              let prs = filter isUndetermined rs
                              return (length prs, (r, prs))

@@ -70,7 +70,6 @@ facts = rules [
  , "4a" -:     French <==> Blue                      |:: "The French ship with blue chimney..."
  , "4b" -:     French <==> Coffee    <?| toTheRight  |:: "... is to the left of a ship that carries coffee."
  , "4c" -:       Blue <==> Coffee    <?| toTheRight
- -- TODO:                            |?> toTheLeft
  , "5"  -:      Cocoa <==> Marseille <?| toTheRight  |:: "To the right of the ship carrying cocoa" ++
                                                          " is a ship going to Marseille."
  , "6"  -:  Brazilian <==> Manila                    |:: "The Brazilian ship is heading for Manila."
